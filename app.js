@@ -5,7 +5,7 @@ import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, ge
    Aegis AI Health Symptoms Checker - Core Client-Side Logic Engine
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+const startApp = () => {
   
   // Redirect API fetches to port 5000 if running on port 5500 (Live Server)
   if (window.location.port === '5500') {
@@ -4091,5 +4091,11 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     }
   }
 
-});
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp);
+} else {
+  startApp();
+}
 
