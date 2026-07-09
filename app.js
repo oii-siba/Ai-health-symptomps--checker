@@ -130,22 +130,7 @@ const startApp = () => {
   function openProfileModal(e) {
     if (e) e.stopPropagation();
     
-    if (appState.user) {
-      if (profNameInput) profNameInput.value = appState.user.name || '';
-      if (profGenderInput) profGenderInput.value = appState.user.gender || 'Female';
-      if (profAgeInput) profAgeInput.value = appState.user.age || 28;
-      if (profWeightInput) profWeightInput.value = appState.user.weight || '';
-      if (profHeightInput) profHeightInput.value = appState.user.height || '';
-      if (profBloodInput) profBloodInput.value = appState.user.bloodGroup || appState.user.blood_group || 'A+';
-      if (profAllergiesInput) profAllergiesInput.value = appState.user.allergies || '';
-      if (profHistoryInput) profHistoryInput.value = appState.user.medicalHistory || appState.user.clinical_history || '';
-      
-      // Update avatar preset preview
-      if (settingsAvatarPreview) {
-        settingsAvatarPreview.src = appState.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
-      }
-      currentAvatarUrl = appState.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
-    }
+    updateProfileUI();
     
     if (settingsModal) {
       settingsModal.style.display = 'flex';
