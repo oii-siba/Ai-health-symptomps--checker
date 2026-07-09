@@ -1,3 +1,6 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 /* ==========================================================================
    Aegis AI Health Symptoms Checker - Core Client-Side Logic Engine
    ========================================================================== */
@@ -14,6 +17,235 @@ document.addEventListener('DOMContentLoaded', () => {
       return originalFetch(input, init);
     };
   }
+
+  // --- FIREBASE CONFIGURATION ---
+  // Insert your Firebase configuration details here.
+  // You can get this from the Firebase Console (https://console.firebase.google.com/)
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  let firebaseApp = null;
+  let auth = null;
+  let db = null;
+  let currentUser = null;
+
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+    try {
+      firebaseApp = initializeApp(firebaseConfig);
+      auth = getAuth(firebaseApp);
+      db = getFirestore(firebaseApp);
+      console.log("Firebase initialized successfully!");
+    } catch (err) {
+      console.error("Firebase initialization failed:", err);
+    }
+  } else {
+    console.log("Firebase is in local mode. Fill in firebaseConfig at the top of app.js to enable Google Login & Firestore sync.");
+  }
+
+  function renderAuthUI() {
+    const container = document.getElementById('user-profile-container');
+    if (!container) return;
+
+    if (!auth) {
+      // Firebase not configured - show default fallback card
+      container.innerHTML = `
+        <div class="user-profile-card">
+          <div class="profile-avatar">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="User avatar" id="profile-img">
+            <span class="status-indicator online"></span>
+          </div>
+          <div class="profile-info">
+            <h3 id="profile-name">${appState.user?.name || 'Sarah Jenkins'}</h3>
+            <p id="profile-stats">${appState.user?.age || 28} Yrs • ${appState.user?.gender || 'Female'}</p>
+          </div>
+          <div class="profile-actions-row" style="display: flex; gap: 8px; margin-left: auto;">
+            <button class="settings-btn" id="open-settings-btn" title="Edit Profile">
+              <i data-lucide="sliders"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      const editBtn = container.querySelector('#open-settings-btn');
+      if (editBtn) editBtn.addEventListener('click', openProfileModal);
+      lucide.createIcons();
+      return;
+    }
+
+    if (currentUser) {
+      // User is logged in
+      container.innerHTML = `
+        <div class="user-profile-card">
+          <div class="profile-avatar">
+            <img src="${currentUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}" alt="User avatar" id="profile-img">
+            <span class="status-indicator online"></span>
+          </div>
+          <div class="profile-info">
+            <h3 id="profile-name" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 110px;">${appState.user?.name || currentUser.displayName || 'User'}</h3>
+            <p id="profile-stats">${appState.user?.age || 28} Yrs • ${appState.user?.gender || 'Female'}</p>
+          </div>
+          <div class="profile-actions-row" style="display: flex; gap: 6px; margin-left: auto;">
+            <button class="settings-btn" id="open-settings-btn" title="Edit Profile">
+              <i data-lucide="sliders"></i>
+            </button>
+            <button class="settings-btn logout-btn" id="google-logout-btn" title="Logout" style="color: var(--accent-rose);">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      const editBtn = container.querySelector('#open-settings-btn');
+      if (editBtn) editBtn.addEventListener('click', openProfileModal);
+
+      const logoutBtn = container.querySelector('#google-logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+          try {
+            await signOut(auth);
+            console.log("Logged out successfully");
+            currentUser = null;
+            appState.user = { name: "Guest User", age: 28, gender: "Female", weight: 62, height: 168, blood_group: "O+", allergies: "None", clinical_history: "" };
+            appState.savedDiagnostics = [];
+            userMeds = [];
+            sleepLogs = [];
+            hydrationData = { current: 0, target: 3.0 };
+            
+            updateProfileUI();
+            renderHistoryTab();
+            renderMedications();
+            updateWaterUI();
+            renderSleepLogs();
+            renderAuthUI();
+          } catch (err) {
+            console.error("Logout failed:", err);
+          }
+        });
+      }
+    } else {
+      // User is logged out - show "Sign in with Google" button
+      container.innerHTML = `
+        <div style="padding: 0 4px 10px 4px;">
+          <button class="google-login-btn" id="google-login-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+            <span>Sign in with Google</span>
+          </button>
+        </div>
+      `;
+
+      const loginBtn = container.querySelector('#google-login-btn');
+      if (loginBtn) {
+        loginBtn.addEventListener('click', async () => {
+          try {
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            console.log("Successfully logged in:", result.user.displayName);
+          } catch (err) {
+            console.error("Google Sign-In failed:", err);
+            alert("Google Sign-In failed: " + err.message);
+          }
+        });
+      }
+    }
+    lucide.createIcons();
+  }
+
+  async function syncDataFromFirestore(uid) {
+    if (!db) return;
+    try {
+      // 1. Sync Profile
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        appState.user = userDoc.data();
+      } else {
+        appState.user = {
+          name: currentUser.displayName || "Sarah Jenkins",
+          email: currentUser.email || "",
+          age: 28,
+          gender: "Female",
+          weight: 62,
+          height: 168,
+          blood_group: "O+",
+          allergies: "None",
+          clinical_history: ""
+        };
+        await setDoc(userDocRef, appState.user);
+      }
+      updateProfileUI();
+
+      // 2. Sync Scan History
+      const historyCol = collection(db, "users", uid, "history");
+      const historyQuery = query(historyCol, orderBy("timestamp", "desc"));
+      const historySnapshot = await getDocs(historyQuery);
+      appState.savedDiagnostics = [];
+      historySnapshot.forEach((docSnap) => {
+        appState.savedDiagnostics.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderHistoryTab();
+
+      // 3. Sync Medications
+      const medsCol = collection(db, "users", uid, "medications");
+      const medsSnapshot = await getDocs(medsCol);
+      userMeds = [];
+      medsSnapshot.forEach((docSnap) => {
+        userMeds.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderMedications();
+
+      // 4. Sync Sleep
+      const sleepCol = collection(db, "users", uid, "sleep");
+      const sleepQuery = query(sleepCol, orderBy("date", "desc"));
+      const sleepSnapshot = await getDocs(sleepQuery);
+      sleepLogs = [];
+      sleepSnapshot.forEach((docSnap) => {
+        sleepLogs.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      renderSleepLogs();
+
+      // 5. Sync Water
+      const todayDateStr = new Date().toDateString();
+      const waterDocRef = doc(db, "users", uid, "water", todayDateStr);
+      const waterDoc = await getDoc(waterDocRef);
+      if (waterDoc.exists()) {
+        const wData = waterDoc.data();
+        hydrationData.current = wData.current;
+        hydrationData.target = wData.target;
+      } else {
+        hydrationData.current = 0;
+        hydrationData.target = 3.0;
+        await setDoc(waterDocRef, { current: 0, target: 3.0 });
+      }
+      updateWaterUI();
+
+      renderAuthUI();
+    } catch (err) {
+      console.error("Error syncing data from Firestore:", err);
+    }
+  }
+
+  if (auth) {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        console.log("Auth state changed: user logged in", user.email);
+        await syncDataFromFirestore(user.uid);
+      } else {
+        currentUser = null;
+        console.log("Auth state changed: user logged out");
+        renderAuthUI();
+      }
+    });
+  } else {
+    // Initial UI render in mock/local mode
+    setTimeout(() => renderAuthUI(), 100);
+  }
+
   
   // --- MEDICAL KNOWLEDGE BASE DATA ---
   const SYMPTOMS_DB = [
@@ -802,6 +1034,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- PROFILE MANAGEMENT ---
   async function loadUserProfile() {
+    if (currentUser && db) {
+      return; // Handled by Firestore sync
+    }
     try {
       const res = await fetch('/api/profile');
       if (res.ok) {
@@ -1046,6 +1281,15 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Simulate high-tech biometric sync delay (750ms) for aesthetics
       await new Promise(resolve => setTimeout(resolve, 750));
+
+      if (currentUser && db) {
+        try {
+          await setDoc(doc(db, "users", currentUser.uid), updatedUser);
+          console.log("Profile saved to Firestore");
+        } catch (fErr) {
+          console.error("Firestore profile save error:", fErr);
+        }
+      }
 
       const res = await fetch('/api/profile', {
         method: 'POST',
@@ -1892,6 +2136,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     
+    if (currentUser && db) {
+      try {
+        await setDoc(doc(db, "users", currentUser.uid, "history", appState.lastGeneratedReport.id), appState.lastGeneratedReport);
+        console.log("Scan saved to Firestore");
+      } catch (fErr) {
+        console.error("Firestore history save error:", fErr);
+      }
+    }
     try {
       const res = await fetch('/api/history', {
         method: 'POST',
@@ -1900,10 +2152,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (res.ok) {
         appState.savedDiagnostics = await res.json();
+      } else {
+        if (!appState.savedDiagnostics.some(d => d.id === appState.lastGeneratedReport.id)) {
+          appState.savedDiagnostics.unshift(appState.lastGeneratedReport);
+        }
       }
     } catch (err) {
       console.error("Failed to save report to server:", err);
-      appState.savedDiagnostics.unshift(appState.lastGeneratedReport);
+      if (!appState.savedDiagnostics.some(d => d.id === appState.lastGeneratedReport.id)) {
+        appState.savedDiagnostics.unshift(appState.lastGeneratedReport);
+      }
     }
     
     // Show visual confirmation on button
@@ -1923,6 +2181,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const user   = appState.user || {};
 
       // Silent background save
+      if (currentUser && db) {
+        setDoc(doc(db, "users", currentUser.uid, "history", report.id), report).catch(()=>{});
+      }
       fetch('/api/history', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) }).catch(()=>{});
 
       const patientName   = user.name   || 'Patient';
@@ -2158,12 +2419,22 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 
   async function deleteReportFromHistory(id) {
     if (confirm('Are you sure you want to delete this health log record?')) {
+      if (currentUser && db) {
+        try {
+          await deleteDoc(doc(db, "users", currentUser.uid, "history", id));
+          console.log("Firestore history record deleted");
+        } catch (fErr) {
+          console.error("Firestore history record delete error:", fErr);
+        }
+      }
       try {
         const res = await fetch(`/api/history/${id}`, {
           method: 'DELETE'
         });
         if (res.ok) {
           appState.savedDiagnostics = await res.json();
+        } else {
+          appState.savedDiagnostics = appState.savedDiagnostics.filter(d => d.id !== id);
         }
       } catch (err) {
         console.error("Failed to delete record:", err);
@@ -2175,9 +2446,23 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 
   clearHistoryLogBtn.addEventListener('click', async () => {
     if (confirm('Warning: This will permanently delete ALL saved diagnostic history logs. Continue?')) {
+      if (currentUser && db) {
+        try {
+          const historyCol = collection(db, "users", currentUser.uid, "history");
+          const snaps = await getDocs(historyCol);
+          const deletePromises = [];
+          snaps.forEach((docSnap) => {
+            deletePromises.push(deleteDoc(doc(db, "users", currentUser.uid, "history", docSnap.id)));
+          });
+          await Promise.all(deletePromises);
+          console.log("Firestore history logs cleared");
+        } catch (fErr) {
+          console.error("Firestore history logs clear error:", fErr);
+        }
+      }
       try {
         for (const report of appState.savedDiagnostics) {
-          await fetch(`/api/history/${report.id}`, { method: 'DELETE' });
+          await fetch(`/api/history/${report.id}`, { method: 'DELETE' }).catch(()=>{});
         }
         appState.savedDiagnostics = [];
       } catch (err) {
@@ -3112,6 +3397,21 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
   }
   
   async function saveMedicationToServer(med) {
+    if (currentUser && db) {
+      try {
+        await setDoc(doc(db, "users", currentUser.uid, "medications", med.id), med);
+        console.log("Medication saved to Firestore");
+        // Update local memory
+        const idx = userMeds.findIndex(m => m.id === med.id);
+        if (idx !== -1) {
+          userMeds[idx] = med;
+        } else {
+          userMeds.push(med);
+        }
+      } catch (fErr) {
+        console.error("Firestore medication save error:", fErr);
+      }
+    }
     try {
       const res = await fetch('/api/medications', {
         method: 'POST',
@@ -3123,10 +3423,22 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
       }
     } catch (e) {
       console.error("Error saving medication:", e);
+      if (!userMeds.some(m => m.id === med.id)) {
+        userMeds.push(med);
+      }
     }
   }
 
   async function deleteMedicationFromServer(id) {
+    if (currentUser && db) {
+      try {
+        await deleteDoc(doc(db, "users", currentUser.uid, "medications", id));
+        console.log("Medication deleted from Firestore");
+        userMeds = userMeds.filter(m => m.id !== id);
+      } catch (fErr) {
+        console.error("Firestore medication delete error:", fErr);
+      }
+    }
     try {
       const res = await fetch(`/api/medications/${id}`, {
         method: 'DELETE'
@@ -3219,8 +3531,19 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
   // --- WATER HYDRATION TRACKER ---
   
   async function saveWaterData() {
+    const todayDateStr = new Date().toDateString();
+    if (currentUser && db) {
+      try {
+        await setDoc(doc(db, "users", currentUser.uid, "water", todayDateStr), {
+          current: hydrationData.current,
+          target: hydrationData.target
+        });
+        console.log("Water consumption saved to Firestore");
+      } catch (fErr) {
+        console.error("Firestore water save error:", fErr);
+      }
+    }
     try {
-      const todayDateStr = new Date().toDateString();
       await fetch('/api/water', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3258,8 +3581,19 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     resetWaterBtn.addEventListener('click', async () => {
       hydrationData.current = 0;
       updateWaterUI();
+      const todayDateStr = new Date().toDateString();
+      if (currentUser && db) {
+        try {
+          await setDoc(doc(db, "users", currentUser.uid, "water", todayDateStr), {
+            current: 0,
+            target: hydrationData.target
+          });
+          console.log("Water reset saved to Firestore");
+        } catch (fErr) {
+          console.error("Firestore water reset error:", fErr);
+        }
+      }
       try {
-        const todayDateStr = new Date().toDateString();
         await fetch('/api/water/reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -3329,6 +3663,15 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
         date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       };
       
+      if (currentUser && db) {
+        try {
+          await setDoc(doc(db, "users", currentUser.uid, "sleep", newLog.id), newLog);
+          console.log("Sleep log saved to Firestore");
+          sleepLogs.unshift(newLog);
+        } catch (fErr) {
+          console.error("Firestore sleep save error:", fErr);
+        }
+      }
       try {
         const res = await fetch('/api/sleep', {
           method: 'POST',
@@ -3336,13 +3679,20 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
           body: JSON.stringify(newLog)
         });
         if (res.ok) {
-          sleepLogs = await res.json();
+          // If server responds, sync from server to maintain cache
+          const fetchedLogs = await res.json();
+          // Filter duplicates or replace local memory
+          sleepLogs = fetchedLogs;
         } else {
-          sleepLogs.unshift(newLog);
+          if (!sleepLogs.some(s => s.id === newLog.id)) {
+            sleepLogs.unshift(newLog);
+          }
         }
       } catch (err) {
         console.error("Failed to save sleep log to server:", err);
-        sleepLogs.unshift(newLog);
+        if (!sleepLogs.some(s => s.id === newLog.id)) {
+          sleepLogs.unshift(newLog);
+        }
       }
       
       renderSleepLogs();

@@ -66,18 +66,26 @@
         </button>
       </nav>
 
-      <div class="user-profile-card">
-        <div class="profile-avatar">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="User avatar" id="profile-img">
-          <span class="status-indicator online"></span>
+      <!-- User Profile Card / Auth Container -->
+      <div id="user-profile-container" style="width: 100%; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--glass-border);">
+        <div class="user-profile-card">
+          <div class="profile-avatar">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="User avatar" id="profile-img">
+            <span class="status-indicator online"></span>
+          </div>
+          <div class="profile-info">
+            <h3 id="profile-name">Sarah Jenkins</h3>
+            <p id="profile-stats">28 Yrs • Female</p>
+          </div>
+          <div class="profile-actions-row" style="display: flex; gap: 8px; margin-left: auto;">
+            <button class="settings-btn" id="open-settings-btn" title="Edit Profile">
+              <i data-lucide="sliders"></i>
+            </button>
+            <button class="settings-btn logout-btn" id="google-logout-btn" title="Logout" style="color: var(--accent-rose); display: none;">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
         </div>
-        <div class="profile-info">
-          <h3 id="profile-name">Sarah Jenkins</h3>
-          <p id="profile-stats">28 Yrs • Female</p>
-        </div>
-        <button class="settings-btn" id="open-settings-btn" title="Edit Profile">
-          <i data-lucide="sliders"></i>
-        </button>
       </div>
     </aside>
 
@@ -1688,6 +1696,6 @@
   </div>
 
   <!-- Script logic -->
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
