@@ -1,4 +1,5 @@
 __pycache__/
 *.pyc
 aegis_health.db
-patch_app.py
+patch_*.py
+apply_*.py
