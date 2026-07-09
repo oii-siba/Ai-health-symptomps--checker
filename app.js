@@ -1122,10 +1122,15 @@ const startApp = () => {
       currentAvatarUrl = appState.user.avatar;
     }
 
-    profileImg.src = currentAvatarUrl;
-    profileName.textContent = appState.user.name;
-    profileStats.textContent = `${appState.user.age} Yrs • ${appState.user.gender}`;
-    welcomeName.textContent = appState.user.name.split(' ')[0];
+    const activeProfileImg = document.getElementById('profile-img') || profileImg;
+    const activeProfileName = document.getElementById('profile-name') || profileName;
+    const activeProfileStats = document.getElementById('profile-stats') || profileStats;
+    const activeWelcomeName = document.getElementById('welcome-name') || welcomeName;
+
+    if (activeProfileImg) activeProfileImg.src = currentAvatarUrl;
+    if (activeProfileName) activeProfileName.textContent = appState.user.name;
+    if (activeProfileStats) activeProfileStats.textContent = `${appState.user.age} Yrs • ${appState.user.gender}`;
+    if (activeWelcomeName) activeWelcomeName.textContent = appState.user.name.split(' ')[0];
     
     // Keep wizard form inputs synchronized
     diagGenderInput.value = appState.user.gender;
