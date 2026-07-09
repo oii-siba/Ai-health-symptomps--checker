@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI_health - Symptom Checker & Health Assistant</title>
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.jpg" alt="AI_health Logo" class="brand-logo-img">
+      </div>
+
+      <nav class="nav-menu" style="overflow-y: auto; max-height: calc(100vh - 200px); padding-bottom: 20px;">
+        <button class="nav-item active" data-tab="checker">
+          <i data-lucide="activity"></i>
+          <span data-i18n="nav_checker">Symptom Checker</span>
+        </button>
+        <button class="nav-item" data-tab="skin">
+          <i data-lucide="camera"></i>
+          <span data-i18n="nav_skin">Skin Detector</span>
+        </button>
+        <button class="nav-item" data-tab="heart">
+          <i data-lucide="heart"></i>
+          <span data-i18n="nav_heart">Heart Rate</span>
+        </button>
+        <button class="nav-item" data-tab="reminders">
+          <i data-lucide="bell"></i>
+          <span data-i18n="nav_reminders">Reminders</span>
+        </button>
+        <button class="nav-item" data-tab="trackers">
+          <i data-lucide="smile"></i>
+          <span data-i18n="nav_trackers">Sleep & BMI</span>
+        </button>
+        <button class="nav-item" data-tab="blood">
+          <i data-lucide="file-text"></i>
+          <span data-i18n="nav_blood">Blood Report</span>
+        </button>
+        <button class="nav-item" data-tab="risk">
+          <i data-lucide="shield-alert"></i>
+          <span data-i18n="nav_risk">Risk Predictor</span>
+        </button>
+        <button class="nav-item" data-tab="assistant">
+          <i data-lucide="bot"></i>
+          <span data-i18n="nav_assistant">AI Chat Assistant</span>
+          <span class="badge neon-badge">Live</span>
+        </button>
+        <button class="nav-item" data-tab="history">
+          <i data-lucide="history"></i>
+          <span data-i18n="nav_history">Scan History</span>
+        </button>
+        <button class="nav-item" data-tab="insights">
+          <i data-lucide="trending-up"></i>
+          <span data-i18n="nav_insights">Health Insights</span>
+        </button>
+      </nav>
+
+      <div class="user-profile-card">
+        <div class="profile-avatar">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="User avatar" id="profile-img">
+          <span class="status-indicator online"></span>
+        </div>
+        <div class="profile-info">
+          <h3 id="profile-name">Sarah Jenkins</h3>
+          <p id="profile-stats">28 Yrs • Female</p>
+        </div>
+        <button class="settings-btn" id="open-settings-btn" title="Edit Profile">
+          <i data-lucide="sliders"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top header bar -->
+      <header class="top-bar">
+        <div class="welcome-text">
+          <h2><span data-i18n="greeting_hello">Hello</span>, <span id="welcome-name">Sarah</span></h2>
+          <p data-i18n="greeting_subtitle">How are you feeling today? Let's check your health status.</p>
+        </div>
+        <div class="header-actions">
+          <div class="lang-selector-container">
+            <i data-lucide="languages" class="lang-icon"></i>
+            <select id="language-selector" class="lang-select">
+              <option value="en">English</option>
+              <option value="bn">বাংলা (Bangla)</option>
+              <option value="hi">हिंदी (Hindi)</option>
+            </select>
+          </div>
+          <div class="date-badge">
+            <i data-lucide="calendar"></i>
+            <span id="current-date">July 7, 2026</span>
+          </div>
+          <button class="quick-action-btn emergency-btn" id="emergency-trigger">
+            <i data-lucide="phone-call"></i>
+            <span data-i18n="emergency_sos">Emergency SOS</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB Content: Checker -->
+      <section class="tab-content active" id="tab-checker">
+        <div class="checker-grid">
+          
+          <!-- Column 1: Input & Body Map -->
+          <div class="grid-card search-selection-panel">
+            <div class="card-header">
+              <div class="header-icon-container">
+                <i data-lucide="stethoscope"></i>
+              </div>
+              <div>
+                <h3>Select Symptoms</h3>
+                <p>Search symptoms or click on the interactive body map</p>
+              </div>
+            </div>
+
+            <!-- Search Area -->
+            <div class="search-container">
+              <div class="search-bar">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="symptom-search" placeholder="Type symptoms (e.g. Headache, Fever, Cough)..." autocomplete="off" data-i18n-placeholder="search_placeholder">
+                <button class="voice-input-btn" id="voice-search-btn" title="Speak Symptoms" type="button" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; padding: 6px; border-radius: 50%; transition: all 0.2s ease; margin-right: 6px;">
+                  <i data-lucide="mic" style="width: 18px; height: 18px;"></i>
+                </button>
+                <button class="clear-input-btn" id="clear-search" style="display: none;">
+                  <i data-lucide="x"></i>
+                </button>
+              </div>
+              <!-- Autocomplete suggestions dropdown -->
+              <div class="search-suggestions" id="suggestions-dropdown" style="display: none;"></div>
+            </div>
+
+            <!-- Selected Chips Area -->
+            <div class="selected-symptoms-container">
+              <span class="label-text">Selected Symptoms:</span>
+              <div class="symptom-chips" id="selected-chips">
+                <span class="placeholder-chip">No symptoms selected yet. Use the search or body map below.</span>
+              </div>
+            </div>
+
+            <!-- Interactive Body Map Container -->
+            <div class="body-map-section">
+              <div class="body-map-controls">
+                <span class="section-title">Anatomical Locator</span>
+                <div class="toggle-group">
+                  <button class="toggle-btn active" id="body-view-front">Front</button>
+                  <button class="toggle-btn" id="body-view-back">Back</button>
+                </div>
+              </div>
+              
+              <div class="body-map-wrapper">
+                <!-- SVG Wireframe Human Model -->
+                <svg id="interactive-body-svg" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <!-- Hologram glow filter -->
+                    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="4" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                    <linearGradient id="body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="rgba(14, 165, 233, 0.22)" />
+                      <stop offset="100%" stop-color="rgba(99, 102, 241, 0.08)" />
+                    </linearGradient>
+                    <!-- Pulse glow animation style -->
+                    <style>
+                      @keyframes pulse-glow {
+                        0% { transform: scale(1); opacity: 0.3; }
+                        50% { transform: scale(1.3); opacity: 0.9; filter: drop-shadow(0 0 4px var(--accent-cyan)); }
+                        100% { transform: scale(1); opacity: 0.3; }
+                      }
+                      .brain-pulse-node, .heart-pulse-node {
+                        transform-origin: 100px 45px;
+                        animation: pulse-glow 2s infinite ease-in-out;
+                      }
+                      .heart-pulse-node {
+                        transform-origin: 100px 115px;
+                        animation: pulse-glow 1.5s infinite ease-in-out;
+                      }
+                      .hologram-hud-element {
+                        font-family: monospace;
+                        font-size: 5px;
+                        fill: rgba(14, 165, 233, 0.4);
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                      }
+                    </style>
+                  </defs>
+                  
+                  <!-- Main Body Grid Background lines for cyberpunk feel -->
+                  <g class="grid-lines" stroke="rgba(14, 165, 233, 0.04)" stroke-width="0.5">
+                    <line x1="20" y1="0" x2="20" y2="400" />
+                    <line x1="40" y1="0" x2="40" y2="400" />
+                    <line x1="60" y1="0" x2="60" y2="400" />
+                    <line x1="80" y1="0" x2="80" y2="400" />
+                    <line x1="100" y1="0" x2="100" y2="400" />
+                    <line x1="120" y1="0" x2="120" y2="400" />
+                    <line x1="140" y1="0" x2="140" y2="400" />
+                    <line x1="160" y1="0" x2="160" y2="400" />
+                    <line x1="180" y1="0" x2="180" y2="400" />
+                    <line x1="0" y1="50" x2="200" y2="50" />
+                    <line x1="0" y1="100" x2="200" y2="100" />
+                    <line x1="0" y1="150" x2="200" y2="150" />
+                    <line x1="0" y1="200" x2="200" y2="200" />
+                    <line x1="0" y1="250" x2="200" y2="250" />
+                    <line x1="0" y1="300" x2="200" y2="300" />
+                    <line x1="0" y1="350" x2="200" y2="350" />
+                  </g>
+
+                  <!-- Holographic HUD Corner brackets & Info Texts -->
+                  <path d="M 10,15 L 20,15 L 20,25" fill="none" stroke="rgba(14, 165, 233, 0.3)" stroke-width="0.8" />
+                  <path d="M 190,15 L 180,15 L 180,25" fill="none" stroke="rgba(14, 165, 233, 0.3)" stroke-width="0.8" />
+                  <path d="M 10,385 L 20,385 L 20,375" fill="none" stroke="rgba(14, 165, 233, 0.3)" stroke-width="0.8" />
+                  <path d="M 190,385 L 180,385 L 180,375" fill="none" stroke="rgba(14, 165, 233, 0.3)" stroke-width="0.8" />
+                  
+                  <text x="24" y="20" class="hologram-hud-element">SYS: AEGIS_V2.4</text>
+                  <text x="24" y="27" class="hologram-hud-element">LOC: ACTIVE</text>
+                  <text x="142" y="20" class="hologram-hud-element">SCAN: LOCK_01</text>
+                  <text x="142" y="27" class="hologram-hud-element">RESOLV: 99.4%</text>
+
+                  <!-- HUD Crosshair overlays -->
+                  <circle cx="30" cy="200" r="4" fill="none" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+                  <line x1="24" y1="200" x2="36" y2="200" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+                  <line x1="30" y1="194" x2="30" y2="206" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+
+                  <circle cx="170" cy="200" r="4" fill="none" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+                  <line x1="164" y1="200" x2="176" y2="200" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+                  <line x1="170" y1="194" x2="170" y2="206" stroke="rgba(14, 165, 233, 0.15)" stroke-width="0.5" />
+
+                  <!-- Anatomical Outline (Cyber Wireframe Theme) -->
+                  <!-- Clickable body groups -->
+                  
+                  <!-- HEAD & NECK -->
+                  <g id="part-head" class="body-part-group" data-region="head" data-symptom-suggestions="Headache, Dizziness, Fever, Runny nose, Sore throat">
+                    <circle cx="100" cy="45" r="18" class="part-fill" />
+                    <path d="M 96,62 L 96,76 C 96,76 100,78 104,76 L 104,62 Z" class="part-fill" />
+                    <circle cx="100" cy="45" r="18" class="part-outline" />
+                    <path d="M 96,62 L 96,76 C 96,76 100,78 104,76 L 104,62" class="part-outline" />
+                    <!-- Brain holographic core node -->
+                    <circle cx="100" cy="45" r="4" fill="none" stroke="var(--accent-cyan)" stroke-width="1.2" class="brain-pulse-node" />
+                    <text x="100" y="48" class="part-label">Head</text>
+                  </g>
+
+                  <!-- CHEST (Upper Torso) -->
+                  <g id="part-chest" class="body-part-group" data-region="chest" data-symptom-suggestions="Chest Pain, Shortness of breath, Cough, Wheezing, Heart palpitations">
+                    <path d="M 68,90 C 78,82 122,82 132,90 L 124,145 L 76,145 Z" class="part-fill" />
+                    <path d="M 68,90 C 78,82 122,82 132,90 L 124,145 L 76,145 Z" class="part-outline" />
+                    <!-- Chest holographic heart node -->
+                    <circle cx="100" cy="115" r="4" fill="none" stroke="var(--accent-rose)" stroke-width="1.2" class="heart-pulse-node" />
+                    <text x="100" y="120" class="part-label">Chest</text>
+                  </g>
+
+                  <!-- ABDOMEN (Lower Torso) -->
+                  <g id="part-abdomen" class="body-part-group" data-region="abdomen" data-symptom-suggestions="Stomach Ache, Nausea, Vomiting, Bloating, Heartburn">
+                    <path d="M 75,147 L 125,147 L 121,195 L 79,195 Z" class="part-fill" />
+                    <path d="M 75,147 L 125,147 L 121,195 L 79,195 Z" class="part-outline" />
+                    <text x="100" y="174" class="part-label">Abdomen</text>
+                  </g>
+
+                  <!-- PELVIS / HIP -->
+                  <g id="part-pelvis" class="body-part-group" data-region="pelvis" data-symptom-suggestions="Pelvic Pain, Lower back pain, Urinary urgency, Cramps">
+                    <path d="M 79,197 L 121,197 C 122,212 118,225 116,232 L 84,232 C 82,225 78,212 79,197 Z" class="part-fill" />
+                    <path d="M 79,197 L 121,197 C 122,212 118,225 116,232 L 84,232 C 82,225 78,212 79,197 Z" class="part-outline" />
+                    <text x="100" y="217" class="part-label">Pelvis</text>
+                  </g>
+
+                  <!-- ARMS (Left & Right grouped) -->
+                  <g id="part-arms" class="body-part-group" data-region="arms" data-symptom-suggestions="Joint stiffness, Numbness, Arm weakness, Muscle soreness">
+                    <!-- Left arm (facing viewer right) -->
+                    <path d="M 131,90 C 142,95 146,120 146,150 C 146,180 141,200 137,215 C 134,217 131,215 131,210 C 135,195 139,175 139,150 C 139,120 135,102 129,95 Z" class="part-fill" />
+                    <path d="M 131,90 C 142,95 146,120 146,150 C 146,180 141,200 137,215 C 134,217 131,215 131,210 C 135,195 139,175 139,150 C 139,120 135,102 129,95 Z" class="part-outline" />
+                    <!-- Right arm (facing viewer left) -->
+                    <path d="M 69,90 C 58,95 54,120 54,150 C 54,180 59,200 63,215 C 66,217 69,215 69,210 C 65,195 61,175 61,150 C 61,175 65,102 71,95 Z" class="part-fill" />
+                    <path d="M 69,90 C 58,95 54,120 54,150 C 54,180 59,200 63,215 C 66,217 69,215 69,210 C 65,195 61,175 61,150 C 61,175 65,102 71,95 Z" class="part-outline" />
+                    <text x="40" y="130" class="part-label side-label">Arms</text>
+                  </g>
+
+                  <!-- LEGS (Left & Right grouped) -->
+                  <g id="part-legs" class="body-part-group" data-region="legs" data-symptom-suggestions="Knee pain, Leg swelling, Leg cramps, Numbness in legs">
+                    <!-- Left leg (facing viewer right) -->
+                    <path d="M 101,232 L 117,232 C 117,260 114,290 112,310 C 112,330 114,355 110,388 C 109,391 103,391 102,388 C 98,355 100,330 100,310 C 100,290 101,260 101,232 Z" class="part-fill" />
+                    <path d="M 101,232 L 117,232 C 117,260 114,290 112,310 C 112,330 114,355 110,388 C 109,391 103,391 102,388 C 98,355 100,330 100,310 C 100,290 101,260 101,232 Z" class="part-outline" />
+                    <!-- Right leg (facing viewer left) -->
+                    <path d="M 99,232 L 83,232 C 83,260 86,290 88,310 C 88,330 86,355 90,388 C 91,391 97,391 98,388 C 102,355 100,330 100,310 C 100,290 99,260 99,232 Z" class="part-fill" />
+                    <path d="M 99,232 L 83,232 C 83,260 86,290 88,310 C 88,330 86,355 90,388 C 91,391 97,391 98,388 C 102,355 100,330 100,310 C 100,290 99,260 99,232 Z" class="part-outline" />
+                    <text x="160" y="300" class="part-label side-label">Legs</text>
+                  </g>
+
+                  <!-- Holographic Scanning Laser overlay (animated by CSS) -->
+                  <line x1="20" y1="0" x2="180" y2="0" id="body-scanner-laser" />
+                </svg>
+
+                <!-- Interactive Region Popup -->
+                <div class="body-region-popup" id="body-region-popup" style="display: none;">
+                  <div class="popup-header">
+                    <span class="popup-title" id="popup-region-title">Head Symptoms</span>
+                    <button class="popup-close-btn" id="popup-close-btn">&times;</button>
+                  </div>
+                  <div class="popup-body" id="popup-symptoms-list">
+                    <!-- Dynamic symptom buttons -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Selection Chips -->
+              <div class="quick-selection-wrapper">
+                <span class="sub-label">Popular Symptoms:</span>
+                <div class="quick-symptoms-grid">
+                  <button class="quick-sym-btn" data-symptom="Fever">Fever</button>
+                  <button class="quick-sym-btn" data-symptom="Headache">Headache</button>
+                  <button class="quick-sym-btn" data-symptom="Cough">Cough</button>
+                  <button class="quick-sym-btn" data-symptom="Sore throat">Sore throat</button>
+                  <button class="quick-sym-btn" data-symptom="Fatigue">Fatigue</button>
+                  <button class="quick-sym-btn" data-symptom="Nausea">Nausea</button>
+                  <button class="quick-sym-btn" data-symptom="Stomach Ache">Stomach Ache</button>
+                  <button class="quick-sym-btn" data-symptom="Chest Pain">Chest Pain</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Diagnostic Wizard & Results -->
+          <div class="grid-card diagnosis-wizard-panel">
+            
+            <!-- STATE A: Empty / Start Diagnostics -->
+            <div class="wizard-state active" id="wizard-state-empty">
+              <div class="empty-state-graphic">
+                <div class="circular-radar">
+                  <i data-lucide="heart-pulse" class="radar-heart animate-pulse"></i>
+                  <div class="radar-ring r1"></div>
+                  <div class="radar-ring r2"></div>
+                  <div class="radar-ring r3"></div>
+                </div>
+              </div>
+              <h3>AI Diagnostic Engine</h3>
+              <p>Add symptoms using the search bar or body map, then click below to configure diagnosis settings.</p>
+              <button class="action-btn-primary disabled" id="start-wizard-btn" disabled>
+                <span>Configure Analysis</span>
+                <i data-lucide="arrow-right"></i>
+              </button>
+            </div>
+
+            <!-- STATE B: Questionnaire Wizard -->
+            <div class="wizard-state" id="wizard-state-form">
+              <div class="wizard-header">
+                <h3>Symptom Context</h3>
+                <div class="step-indicator">
+                  <span class="step-dot active" data-step="1"></span>
+                  <span class="step-dot" data-step="2"></span>
+                  <span class="step-dot" data-step="3"></span>
+                </div>
+              </div>
+
+              <form id="wizard-form" onsubmit="event.preventDefault();">
+                <!-- Step 1: User Demographics -->
+                <div class="form-step-container active" data-step="1">
+                  <h4><span class="step-num">01</span> Confirm Demographics</h4>
+                  <p class="step-desc">Biological indicators improve diagnostic accuracy.</p>
+                  
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="diag-gender">Biological Sex</label>
+                      <select id="diag-gender" class="form-select">
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Other">Other / Prefer not to say</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="diag-age">Age</label>
+                      <input type="number" id="diag-age" class="form-input" min="1" max="120" value="28">
+                    </div>
+                  </div>
+
+                  <div class="step-navigation">
+                    <div></div> <!-- Spacer -->
+                    <button type="button" class="wizard-next-btn action-btn-primary">
+                      <span>Next: Severity & Duration</span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Step 2: Severity & Duration -->
+                <div class="form-step-container" data-step="2">
+                  <h4><span class="step-num">02</span> Severity & Duration</h4>
+                  <p class="step-desc">Rate your symptoms' impact and duration.</p>
+
+                  <div class="form-group range-group">
+                    <div class="range-labels">
+                      <label>Symptom Severity</label>
+                      <span class="range-value-badge" id="severity-badge">Moderate</span>
+                    </div>
+                    <input type="range" id="diag-severity" min="1" max="3" value="2" class="form-range">
+                    <div class="range-ticks">
+                      <span>Mild</span>
+                      <span>Moderate</span>
+                      <span>Severe</span>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Duration of Symptoms</label>
+                    <div class="duration-options">
+                      <label class="duration-card">
+                        <input type="radio" name="diag-duration" value="24h" checked>
+                        <div class="duration-box">
+                          <span class="dur-title">&lt; 24 Hours</span>
+                          <span class="dur-subtitle">Just started</span>
+                        </div>
+                      </label>
+                      <label class="duration-card">
+                        <input type="radio" name="diag-duration" value="3d">
+                        <div class="duration-box">
+                          <span class="dur-title">1 - 3 Days</span>
+                          <span class="dur-subtitle">Developing</span>
+                        </div>
+                      </label>
+                      <label class="duration-card">
+                        <input type="radio" name="diag-duration" value="7d">
+                        <div class="duration-box">
+                          <span class="dur-title">4 - 7 Days</span>
+                          <span class="dur-subtitle">Persistent</span>
+                        </div>
+                      </label>
+                      <label class="duration-card">
+                        <input type="radio" name="diag-duration" value="2w">
+                        <div class="duration-box">
+                          <span class="dur-title">1 Week+</span>
+                          <span class="dur-subtitle">Chronic/Long term</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="step-navigation">
+                    <button type="button" class="wizard-back-btn action-btn-secondary">
+                      <i data-lucide="arrow-left"></i>
+                      <span>Back</span>
+                    </button>
+                    <button type="button" class="wizard-next-btn action-btn-primary">
+                      <span>Next: Risk Factors</span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Step 3: Additional Risk Factors -->
+                <div class="form-step-container" data-step="3">
+                  <h4><span class="step-num">03</span> Risk Factors & Context</h4>
+                  <p class="step-desc">Select any relevant conditions or secondary issues.</p>
+
+                  <div class="checkbox-grid">
+                    <label class="checkbox-card">
+                      <input type="checkbox" id="risk-fever" value="fever">
+                      <div class="checkbox-box">
+                        <i data-lucide="thermometer" class="check-icon"></i>
+                        <span>High Fever present</span>
+                      </div>
+                    </label>
+                    
+                    <label class="checkbox-card">
+                      <input type="checkbox" id="risk-breathing" value="breathing">
+                      <div class="checkbox-box">
+                        <i data-lucide="wind" class="check-icon"></i>
+                        <span>Difficulty breathing</span>
+                      </div>
+                    </label>
+
+                    <label class="checkbox-card">
+                      <input type="checkbox" id="risk-meds" value="meds">
+                      <div class="checkbox-box">
+                        <i data-lucide="pill" class="check-icon"></i>
+                        <span>Chronic medications</span>
+                      </div>
+                    </label>
+
+                    <label class="checkbox-card">
+                      <input type="checkbox" id="risk-pregnancy" value="pregnancy">
+                      <div class="checkbox-box">
+                        <i data-lucide="baby" class="check-icon"></i>
+                        <span>Currently Pregnant</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div class="step-navigation">
+                    <button type="button" class="wizard-back-btn action-btn-secondary">
+                      <i data-lucide="arrow-left"></i>
+                      <span>Back</span>
+                    </button>
+                    <button type="button" class="action-btn-primary btn-pulse-glow" id="trigger-scan-btn">
+                      <i data-lucide="cpu"></i>
+                      <span>Analyze with AI_health</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <!-- STATE C: Scanning/Analyzing screen -->
+            <div class="wizard-state" id="wizard-state-scanning">
+              <div class="scanner-container">
+                <div class="scanner-grid-box">
+                  <div class="horizontal-scanner-bar"></div>
+                  <svg class="heart-pulse-wave" viewBox="0 0 100 30" xmlns="http://www.w3.org/2000/svg">
+                    <path class="pulse-line" d="M0,15 L30,15 L35,5 L40,25 L45,10 L50,18 L55,15 L100,15" />
+                  </svg>
+                </div>
+                <div class="loading-stats">
+                  <div class="progress-bar-container">
+                    <div class="progress-fill" id="scan-progress-bar"></div>
+                  </div>
+                  <span class="loading-percentage" id="scan-percent">0%</span>
+                </div>
+                <h3 class="scanning-title">AI Diagnostics Engine Running</h3>
+                <p class="scanning-subtitle" id="scan-status-text">Parsing symptom profiles...</p>
+              </div>
+            </div>
+
+            <!-- STATE D: Diagnostics Results Report -->
+            <div class="wizard-state" id="wizard-state-results">
+              <div class="results-header">
+                <div class="header-icon-container text-success" id="result-status-icon-container">
+                  <i data-lucide="check-circle" id="result-status-icon"></i>
+                </div>
+                <div>
+                  <h3 id="result-verdict-title">Diagnostic Assessment</h3>
+                  <p id="result-time">Generated just now by AI_health Engine</p>
+                </div>
+              </div>
+
+              <!-- Diagnostic Severity Alert Banner -->
+              <div class="alert-banner" id="urgency-alert-banner">
+                <div class="alert-content">
+                  <i data-lucide="alert-triangle" class="alert-icon"></i>
+                  <div>
+                    <h4 id="urgency-title">Consultation Recommended</h4>
+                    <p id="urgency-description">Symptoms warrant attention. Consult a physician if they persist or worsen.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Differential Diagnoses (Conditions matched) -->
+              <div class="diagnosis-matches">
+                <span class="section-title">Potential Causes</span>
+                <div class="matches-list" id="conditions-matches-list">
+                  <!-- Dynamic matched condition cards -->
+                </div>
+              </div>
+
+              <!-- Recommended Specialist -->
+              <div class="result-card specialist-recommendation-card">
+                <div class="specialist-avatar-group">
+                  <div class="avatar-ring">
+                    <i data-lucide="user-cog" id="specialist-icon"></i>
+                  </div>
+                </div>
+                <div class="specialist-info">
+                  <span class="sub-label">Recommended Specialist</span>
+                  <h4 id="recommended-specialist-type">General Practitioner</h4>
+                  <p id="specialist-explanation">A general practitioner can help rule out secondary infections and direct treatment.</p>
+                </div>
+                <button class="appointment-btn" id="book-appointment-btn">
+                  <span>Book Appointment</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </div>
+
+              <!-- Home Care Instructions -->
+              <div class="home-care-section">
+                <span class="section-title">Self-Care Actions & Recommendations</span>
+                <ul class="care-instructions-list" id="home-care-actions-list">
+                  <!-- Dynamic instructions list -->
+                </ul>
+              </div>
+
+              <!-- Suggested Medications -->
+              <div class="home-care-section" id="medicines-section" style="display: none; margin-top: 20px;">
+                <span class="section-title" style="display: flex; align-items: center; gap: 8px;">
+                  <i data-lucide="pill" style="color: var(--accent-teal); width: 18px; height: 18px;"></i>
+                  <span>Rx / Suggested Medications</span>
+                </span>
+                <ul class="care-instructions-list" id="suggested-medicines-list" style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary); font-size: 13px;">
+                  <!-- Dynamic medicines list -->
+                </ul>
+              </div>
+
+              <!-- Disclaimer -->
+              <div class="disclaimer-text">
+                <i data-lucide="info"></i>
+                <p><strong>Disclaimer:</strong> This symptom checker is powered by a simulated heuristic engine for informational purposes. It is not a replacement for professional medical evaluation, diagnosis, or treatment. If you are experiencing a medical emergency, please call your local emergency services immediately.</p>
+              </div>
+
+              <!-- Result Actions -->
+              <div class="results-actions">
+                <button class="action-btn-secondary" id="reset-diagnostics-btn">
+                  <i data-lucide="rotate-ccw"></i>
+                  <span>Start New Diagnostic Scan</span>
+                </button>
+                <button class="action-btn-primary" id="save-diag-to-history">
+                  <i data-lucide="bookmark"></i>
+                  <span>Save Report to History</span>
+                </button>
+                <button class="action-btn-primary" id="download-prescription-btn" style="background: var(--accent-teal); border-color: var(--accent-teal); box-shadow: 0 4px 15px rgba(13, 202, 240, 0.25);">
+                  <i data-lucide="printer"></i>
+                  <span>Download Prescription</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB Content: Chat Assistant -->
+      <section class="tab-content" id="tab-assistant">
+        <div class="chat-container grid-card">
+          <!-- Chat Header -->
+          <div class="chat-header">
+            <div class="chat-bot-avatar">
+              <i data-lucide="bot"></i>
+              <span class="status-indicator online"></span>
+            </div>
+            <div class="chat-header-info">
+              <h3>AI_health Assistant</h3>
+              <p>Ask anything about wellness, symptoms, nutrition, or active scans</p>
+            </div>
+            <div class="chat-header-actions">
+              <button class="chat-action-btn" id="clear-chat" title="Clear Conversation">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat History / Messages Frame -->
+          <div class="chat-messages" id="chat-messages-container">
+            <div class="message system-msg">
+              <div class="msg-avatar">
+                <i data-lucide="bot"></i>
+              </div>
+              <div class="msg-bubble">
+                <p>Hello! I am your AI_health Assistant. I can help answer health-related questions, explain medical terminology, or suggest diet and fitness tips. What can I do for you today?</p>
+                <span class="msg-time">Today, 21:20</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Suggestion Prompts -->
+          <div class="chat-suggestions-prompts">
+            <button class="suggestion-chip">How can I reduce anxiety naturally?</button>
+            <button class="suggestion-chip">What foods help build immune health?</button>
+            <button class="suggestion-chip">What is the normal resting heart rate?</button>
+          </div>
+
+          <!-- Chat Input Bar -->
+          <form class="chat-input-bar" id="chat-form" onsubmit="event.preventDefault();">
+            <input type="text" id="chat-user-input" placeholder="Type your health question here..." autocomplete="off">
+            <button type="submit" class="chat-send-btn" id="chat-send-trigger" disabled>
+              <i data-lucide="send"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- TAB Content: History -->
+      <section class="tab-content" id="tab-history">
+        <div class="grid-card history-container">
+          <div class="card-header history-header">
+            <div class="header-icon-container">
+              <i data-lucide="folder-heart"></i>
+            </div>
+            <div class="history-title-block">
+              <h3>Diagnostic History Log</h3>
+              <p>Access and review your previously saved symptom assessment reports</p>
+            </div>
+            <button class="action-btn-secondary danger-text-hover" id="clear-history-log" style="display: none;">
+              <i data-lucide="trash-2"></i>
+              <span>Delete All Records</span>
+            </button>
+          </div>
+
+          <!-- Empty History State -->
+          <div class="empty-history-state" id="history-empty-state">
+            <div class="empty-icon-wrap">
+              <i data-lucide="archive"></i>
+            </div>
+            <h4>No Diagnostic Records Found</h4>
+            <p>Your saved scan reports will show up here. Complete a symptom check and click "Save Report to History".</p>
+            <button class="action-btn-primary" id="redirect-to-checker">
+              <i data-lucide="activity"></i>
+              <span>Start Symptoms Check</span>
+            </button>
+          </div>
+
+          <!-- History Lists -->
+          <div class="history-records-list" id="history-list" style="display: none;">
+            <!-- History item cards rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Insights -->
+      <section class="tab-content" id="tab-insights">
+        <div class="insights-dashboard">
+          
+          <!-- Column 1: Daily Health Tracker -->
+          <div class="grid-card insight-card">
+            <div class="card-header">
+              <div class="header-icon-container color-teal">
+                <i data-lucide="check-square"></i>
+              </div>
+              <div>
+                <h3>Daily Health Habits</h3>
+                <p>Track your preventive wellness objectives</p>
+              </div>
+            </div>
+
+            <div class="habits-checklist">
+              <label class="habit-item">
+                <input type="checkbox" checked>
+                <div class="habit-checkbox">
+                  <i data-lucide="check"></i>
+                </div>
+                <div class="habit-details">
+                  <h4>Hydration Target</h4>
+                  <p>Consumed 2.5L / 3.0L Water today</p>
+                </div>
+                <span class="habit-score color-teal">83%</span>
+              </label>
+
+              <label class="habit-item">
+                <input type="checkbox">
+                <div class="habit-checkbox">
+                  <i data-lucide="check"></i>
+                </div>
+                <div class="habit-details">
+                  <h4>Activity Level</h4>
+                  <p>Goal: 8,000 steps (Currently: 5,420 steps)</p>
+                </div>
+                <span class="habit-score color-orange">67%</span>
+              </label>
+
+              <label class="habit-item">
+                <input type="checkbox" checked>
+                <div class="habit-checkbox">
+                  <i data-lucide="check"></i>
+                </div>
+                <div class="habit-details">
+                  <h4>Vitamin & Nutrition Intake</h4>
+                  <p>Omega-3, Vitamin D3 & Daily Greens</p>
+                </div>
+                <span class="habit-score color-teal">100%</span>
+              </label>
+
+              <label class="habit-item">
+                <input type="checkbox" checked>
+                <div class="habit-checkbox">
+                  <i data-lucide="check"></i>
+                </div>
+                <div class="habit-details">
+                  <h4>Restful Sleep</h4>
+                  <p>Target: 7.5 hours (Achieved: 7h 45m)</p>
+                </div>
+                <span class="habit-score color-teal">100%</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Column 2: Regional Statistics / Outbreak maps -->
+          <div class="grid-card insight-card">
+            <div class="card-header">
+              <div class="header-icon-container color-indigo">
+                <i data-lucide="globe"></i>
+              </div>
+              <div>
+                <h3>Seasonal Outbreak Alerts</h3>
+                <p>Regional prevalence of general conditions in your area</p>
+              </div>
+            </div>
+
+            <div class="outbreak-metrics-list">
+              <div class="outbreak-item">
+                <div class="outbreak-info">
+                  <span class="outbreak-name">Seasonal Influenza (Flu)</span>
+                  <span class="outbreak-trend level-high"><i data-lucide="trending-up"></i> Rising</span>
+                </div>
+                <div class="metric-meter-bg">
+                  <div class="metric-meter-fill bg-indigo" style="width: 78%;"></div>
+                </div>
+                <div class="outbreak-stats-line">
+                  <span>Prevalence: High (78/10,000)</span>
+                  <span>Recommendation: Get flu shot</span>
+                </div>
+              </div>
+
+              <div class="outbreak-item">
+                <div class="outbreak-info">
+                  <span class="outbreak-name">Pollen Allergy (Allergic Rhinitis)</span>
+                  <span class="outbreak-trend level-medium"><i data-lucide="trending-up"></i> Stable</span>
+                </div>
+                <div class="metric-meter-bg">
+                  <div class="metric-meter-fill bg-teal" style="width: 52%;"></div>
+                </div>
+                <div class="outbreak-stats-line">
+                  <span>Prevalence: Moderate</span>
+                  <span>Recommendation: Limit outdoor activity in morning</span>
+                </div>
+              </div>
+
+              <div class="outbreak-item">
+                <div class="outbreak-info">
+                  <span class="outbreak-name">Gastroenteritis (Stomach Bug)</span>
+                  <span class="outbreak-trend level-low"><i data-lucide="trending-down"></i> Declining</span>
+                </div>
+                <div class="metric-meter-bg">
+                  <div class="metric-meter-fill bg-green" style="width: 15%;"></div>
+                </div>
+                <div class="outbreak-stats-line">
+                  <span>Prevalence: Low</span>
+                  <span>Recommendation: Wash hands frequently</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB Content: Skin Disease Detector -->
+      <section class="tab-content" id="tab-skin">
+        <div class="checker-grid">
+          <!-- Camera Preview Panel -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="camera"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="skin_detector_title">Skin Disease Detector</h3>
+                  <p data-i18n="skin_detector_subtitle">Scan skin abnormalities using your camera</p>
+                </div>
+              </div>
+              
+              <div class="camera-stream-wrapper" style="width: 100%; aspect-ratio: 4/3; background: rgba(7, 10, 19, 0.6); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <video id="skin-video" autoplay playsinline style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md);"></video>
+                <canvas id="skin-canvas" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md);"></canvas>
+                
+                <!-- Placeholder Graphic -->
+                <div id="skin-placeholder" class="camera-placeholder" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px;">
+                  <i data-lucide="image" class="placeholder-icon" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>
+                  <p data-i18n="camera_start_instruction" style="font-size: 13px; color: var(--text-secondary); max-width: 240px;">Click "Start Camera" to begin scanning or upload a photo</p>
+                </div>
+                
+                <!-- Scanning Laser Overlay -->
+                <div id="skin-scan-overlay" class="scanning-laser" style="display: none; position: absolute; left: 0; right: 0; height: 4px; background: var(--accent-cyan); box-shadow: var(--glow-cyan); z-index: 5; pointer-events: none;"></div>
+              </div>
+            </div>
+            
+            <div class="camera-controls" style="display: flex; gap: 12px; margin-top: 20px;">
+              <button class="action-btn-primary" id="start-skin-camera-btn" style="flex: 1;">
+                <i data-lucide="video"></i>
+                <span data-i18n="btn_start_camera">Start Camera</span>
+              </button>
+              <button class="action-btn-primary" id="capture-skin-btn" style="display: none; flex: 1;">
+                <i data-lucide="camera-off"></i>
+                <span data-i18n="btn_capture_photo">Capture Photo</span>
+              </button>
+              <label class="action-btn-secondary file-upload-label" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; font-weight: 600;">
+                <i data-lucide="upload"></i>
+                <span data-i18n="btn_upload_photo" style="margin-left: 8px;">Upload Image</span>
+                <input type="file" id="skin-file-input" accept="image/*" style="display: none;">
+              </label>
+            </div>
+          </div>
+          
+          <!-- Analysis Results Panel -->
+          <div class="grid-card diagnosis-wizard-panel">
+            <div id="skin-empty-state" class="wizard-state active" style="align-items: center; justify-content: center; text-align: center; height: 100%;">
+              <div class="empty-state-graphic">
+                <div class="circular-radar">
+                  <i data-lucide="scan" class="radar-heart animate-pulse"></i>
+                </div>
+              </div>
+              <h3 data-i18n="skin_ready_title">Dermatological Scanner Ready</h3>
+              <p data-i18n="skin_ready_desc" style="max-width: 320px; margin: 12px auto 0; color: var(--text-secondary); font-size: 14px;">Capture a photo or upload an image to run the AI tissue analyzer.</p>
+            </div>
+            
+            <div id="skin-scanning-state" class="wizard-state" style="align-items: center; justify-content: center; text-align: center; height: 100%;">
+              <div class="scanner-container" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <div class="scanner-grid-box" style="margin: 0 auto 32px; width: 180px; height: 100px; background: rgba(7, 10, 19, 0.6); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: var(--radius-md); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                  <div class="horizontal-scanner-bar" style="position: absolute; left: 0; right: 0; height: 2px; background: var(--accent-cyan); box-shadow: var(--glow-cyan); animation: horizontal-scan 2.2s ease-in-out infinite;"></div>
+                  <i data-lucide="activity" class="radar-heart animate-pulse" style="color: var(--accent-rose); width: 32px; height: 32px; z-index: 2;"></i>
+                </div>
+                <div class="loading-stats" style="margin: 0 auto 24px; width: 220px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                  <div class="progress-bar-container" style="flex-grow: 1; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden;">
+                    <div class="progress-fill" id="skin-progress-bar" style="height: 100%; width: 0%; background: var(--grad-primary); border-radius: 10px; transition: width 0.2s linear;"></div>
+                  </div>
+                  <span class="loading-percentage" id="skin-percent" style="font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--accent-cyan);">0%</span>
+                </div>
+                <h3 data-i18n="skin_analysis_running">AI Dermatological Analysis Running</h3>
+                <p data-i18n="skin_analysis_status" id="skin-status-text" style="color: var(--text-secondary);">Detecting lesions...</p>
+              </div>
+            </div>
+            
+            <div id="skin-results-state" class="wizard-state" style="height: 100%;">
+              <div class="results-header">
+                <div class="header-icon-container text-success" id="skin-result-icon-container" style="color: var(--accent-emerald);">
+                  <i data-lucide="check-circle" id="skin-result-icon"></i>
+                </div>
+                <div>
+                  <h3 id="skin-result-title">Analysis Assessment</h3>
+                  <p id="skin-result-time">Generated just now</p>
+                </div>
+              </div>
+              <div class="alert-banner" id="skin-risk-banner" style="margin-bottom: 20px;">
+                <div class="alert-content" style="display: flex; gap: 12px;">
+                  <i data-lucide="alert-triangle" class="alert-icon" id="skin-risk-icon"></i>
+                  <div>
+                    <h4 id="skin-risk-title">Result Warning</h4>
+                    <p id="skin-risk-desc">Description of risk</p>
+                  </div>
+                </div>
+              </div>
+              <div class="diagnosis-matches" style="margin-bottom: 20px;">
+                <span class="section-title" data-i18n="detected_condition">Detected Condition</span>
+                <div class="matches-list" style="margin-top: 10px;">
+                  <div class="condition-match-card high-match">
+                    <div class="condition-meta" style="display: flex; justify-content: space-between;">
+                      <h4 id="skin-condition-name">Eczema</h4>
+                      <span class="match-percentage" id="skin-condition-pct">92% Match</span>
+                    </div>
+                    <p class="condition-desc" id="skin-condition-desc" style="margin-top: 6px; line-height: 1.5; font-size: 12px; color: var(--text-secondary);">Details of eczema</p>
+                  </div>
+                </div>
+              </div>
+              <div class="home-care-section" style="margin-bottom: 24px;">
+                <span class="section-title" data-i18n="care_recommendations">Recommendations</span>
+                <ul class="care-instructions-list" id="skin-care-list" style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary); font-size: 12px; display: flex; flex-direction: column; gap: 6px;"></ul>
+              </div>
+              <button class="action-btn-secondary full-width" id="reset-skin-btn" style="margin-top: auto;">
+                <i data-lucide="rotate-ccw"></i>
+                <span data-i18n="btn_reset_scanner">New Scan</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Heart Rate Scanner -->
+      <section class="tab-content" id="tab-heart">
+        <div class="checker-grid">
+          <!-- Webcam PPG Input Panel -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="heart"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="heart_title">Heart Rate Scanner</h3>
+                  <p data-i18n="heart_subtitle">Measure pulse rate by placing your finger over the camera</p>
+                </div>
+              </div>
+              
+              <div class="heart-scanner-container" style="display: flex; justify-content: center; align-items: center; padding: 40px 0;">
+                <video id="heart-video" autoplay playsinline style="display: none;"></video>
+                
+                <div class="heart-pulse-detector-circle" id="heart-pulse-circle" style="width: 180px; height: 180px; border-radius: 50%; background: rgba(7, 10, 19, 0.6); border: 2px dashed rgba(14, 165, 233, 0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; transition: all 0.3s ease; overflow: hidden;">
+                  <div id="heart-pulse-wave-fill" class="heart-pulse-wave-fill" style="position: absolute; bottom: 0; left: 0; right: 0; height: 0%; background: rgba(244, 63, 94, 0.15); transition: height 0.3s ease;"></div>
+                  <i data-lucide="heart" class="heart-icon-big" id="heart-scan-icon" style="width: 48px; height: 48px; color: var(--accent-rose); z-index: 2; transition: transform 0.2s ease;"></i>
+                  <div id="heart-finger-status" class="heart-finger-status" data-i18n="finger_prompt" style="font-size: 11px; color: var(--text-secondary); margin-top: 10px; text-align: center; z-index: 2; padding: 0 10px;">Place finger over camera</div>
+                </div>
+              </div>
+            </div>
+            
+            <button class="action-btn-primary full-width" id="start-heart-btn" style="margin-top: 20px;">
+              <i data-lucide="play"></i>
+              <span data-i18n="btn_start_pulse_scan">Start Pulse Scan</span>
+            </button>
+          </div>
+          
+          <!-- PPG Waveform and BPM Results -->
+          <div class="grid-card diagnosis-wizard-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="activity"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="ppg_graph_title">Photoplethysmogram (PPG)</h3>
+                  <p data-i18n="ppg_graph_subtitle">Real-time cardiovascular pulse signal</p>
+                </div>
+              </div>
+              
+              <div class="ppg-graph-wrapper" style="width: 100%; height: 160px; background: rgba(7, 10, 19, 0.4); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 10px; overflow: hidden; margin-bottom: 24px;">
+                <canvas id="ppg-canvas" style="width: 100%; height: 100%;"></canvas>
+              </div>
+              
+              <div class="pulse-bpm-display-panel" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: var(--grad-dark-card); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: 24px;">
+                <div class="bpm-counter-box" style="display: flex; align-items: baseline; gap: 6px;">
+                  <span id="pulse-bpm-value" style="font-family: var(--font-display); font-size: 42px; font-weight: 800; color: var(--accent-rose);">--</span>
+                  <span class="bpm-label" style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">BPM</span>
+                </div>
+                <div class="pulse-status-badge" id="pulse-status-badge" style="background: rgba(255, 255, 255, 0.05); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">
+                  <span data-i18n="pulse_waiting">Waiting for Signal...</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="home-care-section">
+              <span class="section-title" data-i18n="pulse_analysis_title">Pulse Assessment</span>
+              <p id="pulse-assessment-text" class="condition-desc" data-i18n="pulse_waiting_desc" style="margin-top: 10px; line-height: 1.5;">BPM will display once the reading stabilizes. Rest quietly for 15 seconds during scan.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Medication & Water Reminders -->
+      <section class="tab-content" id="tab-reminders">
+        <div class="checker-grid">
+          <!-- Medication Schedule -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="bell"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="meds_reminders_title">Medication Reminder</h3>
+                  <p data-i18n="meds_reminders_subtitle">Schedule and check off daily medications</p>
+                </div>
+              </div>
+              
+              <!-- Medication Checklist -->
+              <div class="meds-checklist-section" style="margin-bottom: 24px;">
+                <span class="label-text" data-i18n="today_meds">Today's Schedule</span>
+                <div class="meds-list" id="today-meds-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px; max-height: 220px; overflow-y: auto; padding-right: 6px;">
+                  <!-- Dynamic taken status -->
+                </div>
+              </div>
+            </div>
+            
+            <!-- Add Med Form -->
+            <form id="add-med-form" class="add-med-form" onsubmit="event.preventDefault();" style="border-top: 1px solid var(--glass-border); padding-top: 20px; margin-top: auto;">
+              <span class="label-text" data-i18n="add_new_med">Add New Medication</span>
+              <div class="form-group" style="margin-bottom: 12px; margin-top: 10px;">
+                <label for="med-name" data-i18n="lbl_med_name">Medicine Name</label>
+                <input type="text" id="med-name" class="form-input" placeholder="e.g. Paracetamol" required>
+              </div>
+              <div class="form-row" style="margin-bottom: 16px;">
+                <div class="form-group">
+                  <label for="med-dose" data-i18n="lbl_med_dose">Dosage</label>
+                  <input type="text" id="med-dose" class="form-input" placeholder="e.g. 1 Tablet" required>
+                </div>
+                <div class="form-group">
+                  <label for="med-time" data-i18n="lbl_med_time">Time</label>
+                  <input type="time" id="med-time" class="form-input" required>
+                </div>
+              </div>
+              <button type="submit" class="action-btn-primary full-width">
+                <i data-lucide="plus"></i>
+                <span data-i18n="btn_add_med">Add Medication</span>
+              </button>
+            </form>
+          </div>
+          
+          <!-- Water Hydration Reminder -->
+          <div class="grid-card diagnosis-wizard-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container color-teal">
+                  <i data-lucide="droplet"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="water_tracker_title">Water Intake Tracker</h3>
+                  <p data-i18n="water_tracker_subtitle">Track and configure daily hydration reminders</p>
+                </div>
+              </div>
+              
+              <div class="water-tracker-visual-wrapper" style="display: flex; align-items: center; justify-content: space-around; padding: 20px 0; margin-bottom: 24px;">
+                <!-- Beautiful glass bottle outline filled dynamically -->
+                <div class="water-bottle-container" style="width: 90px; height: 170px; border: 3px solid rgba(14, 165, 233, 0.4); border-radius: 12px; position: relative; display: flex; flex-direction: column; overflow: hidden; background: rgba(7, 10, 19, 0.4); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
+                  <div class="water-bottle-neck" style="width: 30px; height: 16px; border: 3px solid rgba(14, 165, 233, 0.4); border-bottom: none; border-radius: 4px 4px 0 0; position: absolute; top: -17px; left: 27px; background: transparent;"></div>
+                  <div class="water-fill" id="water-fill-level" style="position: absolute; bottom: 0; left: 0; right: 0; height: 0%; background: linear-gradient(180deg, rgba(14, 165, 233, 0.8) 0%, rgba(99, 102, 241, 0.8) 100%); transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: center;">
+                    <!-- Wave Effect SVG -->
+                    <div class="water-wave" style="position: absolute; top: -8px; left: 0; width: 200%; height: 10px; background: transparent; background-image: radial-gradient(circle at 50% 100%, transparent 4px, rgba(14, 165, 233, 0.8) 4px); background-size: 16px 12px; animation: wave-move 2s linear infinite;"></div>
+                  </div>
+                  <div class="water-fill-text" id="water-fill-percent" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-display); font-size: 16px; font-weight: 800; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 5;">0%</div>
+                </div>
+                
+                <div class="water-intake-details" style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
+                  <div class="intake-progress-text" style="font-family: var(--font-display); font-size: 28px; font-weight: 700;">
+                    <span id="current-water-val" style="color: var(--accent-cyan);">0</span> <span style="font-size: 14px; color: var(--text-muted);">/</span> <span id="target-water-val" style="color: var(--text-secondary);">2000</span> <span class="unit" style="font-size: 14px; color: var(--text-muted); font-weight: 500;">ml</span>
+                  </div>
+                  <div class="water-quick-add" style="display: flex; gap: 8px;">
+                    <button class="action-btn-secondary" data-water="250" style="padding: 8px 12px; font-size: 12px;">+250ml</button>
+                    <button class="action-btn-secondary" data-water="500" style="padding: 8px 12px; font-size: 12px;">+500ml</button>
+                    <button class="action-btn-secondary" id="reset-water-btn" title="Reset Today's Hydration" style="padding: 8px 10px;">
+                      <i data-lucide="rotate-ccw" style="width: 14px; height: 14px;"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Reminders Config -->
+            <div class="water-settings-box">
+              <label class="checkbox-card">
+                <input type="checkbox" id="water-reminder-toggle">
+                <div class="checkbox-box flex-row" style="flex-direction: row; padding: 12px; gap: 12px; justify-content: center; cursor: pointer; align-items: center;">
+                  <i data-lucide="bell" class="check-icon" style="width: 18px; height: 18px;"></i>
+                  <span data-i18n="enable_water_notifications" style="font-size: 12px; font-weight: 600;">Enable Hourly Hydration Reminders</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Sleep & BMI Trackers -->
+      <section class="tab-content" id="tab-trackers">
+        <div class="checker-grid">
+          <!-- Sleep Tracker -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="moon"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="sleep_tracker_title">Sleep Log & Quality</h3>
+                  <p data-i18n="sleep_tracker_subtitle">Record sleep hours and monitor overnight patterns</p>
+                </div>
+              </div>
+              
+              <form id="sleep-log-form" onsubmit="event.preventDefault();">
+                <div class="form-row" style="margin-bottom: 12px;">
+                  <div class="form-group">
+                    <label for="sleep-bedtime" data-i18n="lbl_bedtime">Bedtime</label>
+                    <input type="time" id="sleep-bedtime" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="sleep-waketime" data-i18n="lbl_waketime">Wake Time</label>
+                    <input type="time" id="sleep-waketime" class="form-input" required>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 18px;">
+                  <label for="sleep-quality" data-i18n="lbl_sleep_quality">Sleep Quality</label>
+                  <select id="sleep-quality" class="form-select">
+                    <option value="5" data-i18n="sleep_excellent">Excellent (Deep, undisturbed)</option>
+                    <option value="4" data-i18n="sleep_good">Good (Restful sleep)</option>
+                    <option value="3" data-i18n="sleep_fair" selected>Fair (Woke up once/twice)</option>
+                    <option value="2" data-i18n="sleep_poor">Poor (Restless/Interrupted)</option>
+                    <option value="1" data-i18n="sleep_terrible">Terrible (Insomnia/Very light)</option>
+                  </select>
+                </div>
+                <button type="submit" class="action-btn-primary full-width">
+                  <i data-lucide="plus"></i>
+                  <span data-i18n="btn_log_sleep">Log Sleep Record</span>
+                </button>
+              </form>
+            </div>
+            
+            <div class="sleep-history-list-box" style="margin-top: 20px; border-top: 1px solid var(--glass-border); padding-top: 16px;">
+              <span class="label-text" data-i18n="recent_sleep_logs">Recent Sleep Logs</span>
+              <div class="sleep-logs-list" id="sleep-history-list" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; max-height: 140px; overflow-y: auto;">
+                <!-- Dynamic logs -->
+              </div>
+            </div>
+          </div>
+          
+          <!-- BMI Calculator -->
+          <div class="grid-card diagnosis-wizard-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="smile"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="bmi_calculator_title">BMI Calculator</h3>
+                  <p data-i18n="bmi_calculator_subtitle">Calculate Body Mass Index and health status</p>
+                </div>
+              </div>
+              
+              <form id="bmi-form" onsubmit="event.preventDefault();">
+                <div class="form-row" style="margin-bottom: 16px;">
+                  <div class="form-group">
+                    <label for="bmi-weight" data-i18n="lbl_weight">Weight (kg)</label>
+                    <input type="number" id="bmi-weight" class="form-input" min="10" max="250" value="70" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="bmi-height" data-i18n="lbl_height">Height (cm)</label>
+                    <input type="number" id="bmi-height" class="form-input" min="50" max="250" value="175" required>
+                  </div>
+                </div>
+                <button type="button" id="calc-bmi-btn" class="action-btn-primary full-width">
+                  <i data-lucide="calculator"></i>
+                  <span data-i18n="btn_calc_bmi">Calculate BMI</span>
+                </button>
+              </form>
+            </div>
+            
+            <div class="bmi-result-panel" id="bmi-result-panel" style="display: none; margin-top: 24px; border-top: 1px solid var(--glass-border); padding-top: 20px;">
+              <div class="bmi-score-box" style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;">
+                <span id="bmi-value-text" style="font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--accent-cyan);">22.9</span>
+                <span class="bmi-status" id="bmi-status-text" style="font-size: 14px; font-weight: 700; color: var(--accent-emerald);">Normal Weight</span>
+              </div>
+              
+              <div class="bmi-gauge-line" style="height: 6px; width: 100%; background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-emerald) 40%, var(--accent-amber) 70%, var(--accent-rose) 100%); border-radius: 10px; position: relative; margin: 15px 0;">
+                <div class="bmi-marker" id="bmi-gauge-marker" style="width: 12px; height: 12px; border-radius: 50%; background: white; border: 2px solid var(--bg-primary); position: absolute; top: -3px; left: 50%; transform: translateX(-50%); box-shadow: 0 0 8px rgba(0,0,0,0.5); transition: left 0.5s ease;"></div>
+              </div>
+              
+              <p class="condition-desc" id="bmi-advice-text" style="margin-top: 12px; line-height: 1.5; color: var(--text-secondary);"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Blood Report OCR -->
+      <section class="tab-content" id="tab-blood">
+        <div class="checker-grid">
+          <!-- Dropzone and File Details -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="file-text"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="blood_ocr_title">Upload Blood Report</h3>
+                  <p data-i18n="blood_ocr_subtitle">Analyze blood reports and interpret clinical parameters</p>
+                </div>
+              </div>
+              
+              <div class="blood-dropzone" id="blood-dropzone" style="height: 160px; border: 2px dashed var(--glass-border); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(7, 10, 19, 0.4); cursor: pointer; transition: all 0.3s ease; padding: 20px; text-align: center;">
+                <i data-lucide="upload-cloud" class="upload-icon-big" style="width: 40px; height: 40px; color: var(--text-muted); margin-bottom: 12px;"></i>
+                <p data-i18n="dropzone_instruction" style="font-size: 13px; font-weight: 500;">Drag and drop your report here or click to browse</p>
+                <span class="sub-label" style="font-size: 11px; margin-top: 4px;">Supports PDF, PNG, JPG</span>
+                <input type="file" id="blood-file-input" accept="image/*,application/pdf" style="display: none;">
+              </div>
+              
+              <div id="blood-file-details" class="blood-file-details" style="display: none; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-top: 16px;">
+                <i data-lucide="file" class="file-icon" style="color: var(--accent-cyan); width: 22px; height: 22px;"></i>
+                <div class="file-info-block" style="display: flex; flex-direction: column; flex-grow: 1;">
+                  <span id="blood-filename" class="filename" style="font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">report.pdf</span>
+                  <span id="blood-filesize" class="filesize" style="font-size: 11px; color: var(--text-muted);">1.2 MB</span>
+                </div>
+                <button class="clear-input-btn" id="clear-blood-file">
+                  <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                </button>
+              </div>
+            </div>
+            
+            <button class="action-btn-primary full-width disabled" id="analyze-blood-btn" disabled style="margin-top: 20px;">
+              <i data-lucide="cpu"></i>
+              <span data-i18n="btn_analyze_report">Extract and Analyze Report</span>
+            </button>
+          </div>
+          
+          <!-- Blood Results Extraction Panel -->
+          <div class="grid-card diagnosis-wizard-panel">
+            <!-- Empty state -->
+            <div id="blood-empty-state" class="wizard-state active" style="align-items: center; justify-content: center; text-align: center; height: 100%;">
+              <div class="empty-state-graphic">
+                <div class="circular-radar">
+                  <i data-lucide="file-spreadsheet" class="radar-heart animate-pulse"></i>
+                </div>
+              </div>
+              <h3 data-i18n="blood_ready_title">Blood Report Analyzer Ready</h3>
+              <p data-i18n="blood_ready_desc" style="max-width: 320px; margin: 12px auto 0; color: var(--text-secondary); font-size: 14px;">Upload a blood test report to run the AI biomarker extractor.</p>
+            </div>
+            
+            <!-- Scanning state -->
+            <div id="blood-scanning-state" class="wizard-state" style="align-items: center; justify-content: center; text-align: center; height: 100%;">
+              <div class="scanner-container">
+                <div class="scanner-grid-box" style="margin: 0 auto 32px;">
+                  <div class="horizontal-scanner-bar" style="position: absolute; left: 0; right: 0; height: 2px; background: var(--accent-cyan); box-shadow: var(--glow-cyan); animation: horizontal-scan 2.2s ease-in-out infinite;"></div>
+                  <i data-lucide="microscope" class="radar-heart animate-pulse" style="width: 32px; height: 32px; z-index: 2; color: var(--accent-cyan);"></i>
+                </div>
+                <div class="loading-stats" style="margin: 0 auto 24px;">
+                  <div class="progress-bar-container">
+                    <div class="progress-fill" id="blood-progress-bar"></div>
+                  </div>
+                  <span class="loading-percentage" id="blood-percent">0%</span>
+                </div>
+                <h3 data-i18n="blood_scanning_title">AI Document Extraction Running</h3>
+                <p data-i18n="blood_scanning_status" id="blood-status-text" style="color: var(--text-secondary);">Parsing structures...</p>
+              </div>
+            </div>
+            
+            <!-- Results state -->
+            <div id="blood-results-state" class="wizard-state" style="height: 100%;">
+              <div class="results-header">
+                <div class="header-icon-container text-success">
+                  <i data-lucide="check-square" style="color: var(--accent-emerald);"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="extracted_biomarkers">Biomarker Extraction Results</h3>
+                  <p id="blood-result-time">Validated Assessment by AI_health</p>
+                </div>
+              </div>
+              
+              <div class="blood-table-wrapper" style="width: 100%; overflow-x: auto; margin-bottom: 16px;">
+                <table class="blood-results-table" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--glass-border); color: var(--text-secondary);">
+                      <th style="padding: 10px;" data-i18n="tbl_biomarker">Biomarker</th>
+                      <th style="padding: 10px;" data-i18n="tbl_value">Value</th>
+                      <th style="padding: 10px;" data-i18n="tbl_ref_range">Reference Range</th>
+                      <th style="padding: 10px;" data-i18n="tbl_status">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="blood-table-body">
+                    <!-- Dynamic values -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <div class="alert-banner low-risk" id="blood-assessment-banner" style="margin-top: 16px; margin-bottom: 24px;">
+                <div class="alert-content">
+                  <i data-lucide="info" class="alert-icon"></i>
+                  <div>
+                    <h4 data-i18n="overall_assessment">Overall Report Assessment</h4>
+                    <p id="blood-overall-assessment-text" style="color: var(--text-secondary);">All parameters look stable.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="action-btn-secondary full-width" id="reset-blood-btn" style="margin-top: auto;">
+                <i data-lucide="rotate-ccw"></i>
+                <span data-i18n="btn_upload_another">Upload Another Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB Content: Health Risk Predictor -->
+      <section class="tab-content" id="tab-risk">
+        <div class="checker-grid">
+          <!-- Risk Form -->
+          <div class="grid-card search-selection-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-header">
+                <div class="header-icon-container">
+                  <i data-lucide="shield-alert"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="risk_title">Health Risk Predictor</h3>
+                  <p data-i18n="risk_subtitle">Assess lifestyle risk scores for chronic medical conditions</p>
+                </div>
+              </div>
+              
+              <form id="risk-assessment-form" onsubmit="event.preventDefault();">
+                <div class="form-row" style="margin-bottom: 12px;">
+                  <div class="form-group">
+                    <label for="risk-systolic" data-i18n="lbl_systolic">Systolic BP (mmHg)</label>
+                    <input type="number" id="risk-systolic" class="form-input" min="80" max="220" value="120" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="risk-exercise" data-i18n="lbl_exercise">Weekly Exercise (Hours)</label>
+                    <input type="number" id="risk-exercise" class="form-input" min="0" max="40" value="3" required>
+                  </div>
+                </div>
+                
+                <div class="checkbox-grid" style="margin-top: 12px; margin-bottom: 20px;">
+                  <label class="checkbox-card">
+                    <input type="checkbox" id="risk-smoker">
+                    <div class="checkbox-box" style="padding: 12px; gap: 8px; justify-content: center; height: 100%;">
+                      <i data-lucide="wind" class="check-icon" style="width: 20px; height: 20px;"></i>
+                      <span data-i18n="risk_smoking" style="font-size: 11px;">Active Smoker</span>
+                    </div>
+                  </label>
+                  
+                  <label class="checkbox-card">
+                    <input type="checkbox" id="risk-diabetic">
+                    <div class="checkbox-box" style="padding: 12px; gap: 8px; justify-content: center; height: 100%;">
+                      <i data-lucide="activity" class="check-icon" style="width: 20px; height: 20px;"></i>
+                      <span data-i18n="risk_diabetes_history" style="font-size: 11px;">Family Diabetes</span>
+                    </div>
+                  </label>
+                  
+                  <label class="checkbox-card">
+                    <input type="checkbox" id="risk-heart-history">
+                    <div class="checkbox-box" style="padding: 12px; gap: 8px; justify-content: center; height: 100%;">
+                      <i data-lucide="heart" class="check-icon" style="width: 20px; height: 20px;"></i>
+                      <span data-i18n="risk_heart_history" style="font-size: 11px;">Family Heart</span>
+                    </div>
+                  </label>
+                  
+                  <label class="checkbox-card">
+                    <input type="checkbox" id="risk-alcohol">
+                    <div class="checkbox-box" style="padding: 12px; gap: 8px; justify-content: center; height: 100%;">
+                      <i data-lucide="glass-water" class="check-icon" style="width: 20px; height: 20px;"></i>
+                      <span data-i18n="risk_alcohol" style="font-size: 11px;">Frequent Drinker</span>
+                    </div>
+                  </label>
+                </div>
+              </form>
+            </div>
+            
+            <button type="button" id="risk-calc-trigger" class="action-btn-primary full-width btn-pulse-glow" style="margin-top: 20px;">
+              <i data-lucide="calculator"></i>
+              <span data-i18n="btn_calculate_risk">Run Risk Analysis</span>
+            </button>
+          </div>
+          
+          <!-- Risk assessment Results -->
+          <div class="grid-card diagnosis-wizard-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div id="risk-empty-state" class="wizard-state active" style="align-items: center; justify-content: center; text-align: center; height: 100%;">
+              <div class="empty-state-graphic">
+                <div class="circular-radar">
+                  <i data-lucide="shield" class="radar-heart animate-pulse"></i>
+                </div>
+              </div>
+              <h3 data-i18n="risk_ready_title">Risk Prediction Engine Ready</h3>
+              <p data-i18n="risk_ready_desc" style="max-width: 320px; margin: 12px auto 0; color: var(--text-secondary); font-size: 14px;">Configure lifestyle parameters to simulate disease risk models.</p>
+            </div>
+            
+            <div id="risk-results-state" class="wizard-state" style="height: 100%;">
+              <div class="results-header">
+                <div class="header-icon-container">
+                  <i data-lucide="activity"></i>
+                </div>
+                <div>
+                  <h3 data-i18n="risk_assessment_results">AI Disease Risk Projections</h3>
+                  <p id="risk-result-time">Calculated based on standard clinical risk ratios</p>
+                </div>
+              </div>
+              
+              <div class="outbreak-metrics-list" style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Cardiovascular Risk -->
+                <div class="outbreak-item" style="display: flex; flex-direction: column; gap: 6px;">
+                  <div class="outbreak-info" style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span class="outbreak-name" data-i18n="risk_cardio">Cardiovascular Disease Risk</span>
+                    <span class="outbreak-trend level-medium" id="risk-cardio-badge" style="font-weight: 700; color: var(--accent-indigo);">12%</span>
+                  </div>
+                  <div class="metric-meter-bg" style="height: 6px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden;">
+                    <div class="metric-meter-fill bg-indigo" id="risk-cardio-fill" style="height: 100%; width: 0%; background: var(--accent-indigo); transition: width 1s ease;"></div>
+                  </div>
+                </div>
+                
+                <!-- Diabetes Risk -->
+                <div class="outbreak-item" style="display: flex; flex-direction: column; gap: 6px;">
+                  <div class="outbreak-info" style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span class="outbreak-name" data-i18n="risk_diabetes">Type 2 Diabetes Risk</span>
+                    <span class="outbreak-trend level-low" id="risk-diabetes-badge" style="font-weight: 700; color: var(--accent-teal);">8%</span>
+                  </div>
+                  <div class="metric-meter-bg" style="height: 6px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden;">
+                    <div class="metric-meter-fill bg-teal" id="risk-diabetes-fill" style="height: 100%; width: 0%; background: var(--accent-teal); transition: width 1s ease;"></div>
+                  </div>
+                </div>
+                
+                <!-- Hypertension Risk -->
+                <div class="outbreak-item" style="display: flex; flex-direction: column; gap: 6px;">
+                  <div class="outbreak-info" style="display: flex; justify-content: space-between; font-size: 13px;">
+                    <span class="outbreak-name" data-i18n="risk_hyper">Hypertension (High BP) Risk</span>
+                    <span class="outbreak-trend level-high" id="risk-hyper-badge" style="font-weight: 700; color: var(--accent-rose);">18%</span>
+                  </div>
+                  <div class="metric-meter-bg" style="height: 6px; width: 100%; background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden;">
+                    <div class="metric-meter-fill bg-orange" id="risk-hyper-fill" style="height: 100%; width: 0%; background: var(--accent-rose); transition: width 1s ease;"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="alert-banner low-risk" id="risk-advice-banner" style="margin-bottom: 24px;">
+                <div class="alert-content" style="display: flex; gap: 12px;">
+                  <i data-lucide="info" class="alert-icon" id="risk-advice-icon"></i>
+                  <div>
+                    <h4 data-i18n="preventive_health_advice">Preventive Recommendations</h4>
+                    <p id="risk-advice-text-content" style="color: var(--text-secondary); line-height: 1.5;">Maintain healthy habits.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="action-btn-secondary full-width" id="reset-risk-btn">
+                <i data-lucide="rotate-ccw"></i>
+                <span data-i18n="btn_recalculate_risk">Start New Assessment</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: Settings / Edit Profile -->
+  <div class="modal-overlay" id="settings-modal" style="display: none;">
+    <div class="modal-card user-profile-modal-card">
+      <div class="modal-header">
+        <h3><i data-lucide="cog" style="color: var(--accent-cyan); animation: spin-slow 8s linear infinite;"></i> Configure User Profile</h3>
+        <button class="close-modal-btn" id="close-settings-btn">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body" style="max-height: 85vh; overflow-y: auto; padding: 20px 24px;">
+        <!-- Holographic Medical Pass / Health ID Card -->
+        <div class="hologram-health-card">
+          <div class="hologram-grid-bg"></div>
+          <div class="hologram-scanner-line"></div>
+          <div class="hologram-header">
+            <span class="hologram-logo"><i data-lucide="shield-alert"></i> AEGIS DIGITAL HEALTH PASS</span>
+            <span class="hologram-pulse"><span class="pulse-dot"></span> ACTIVE</span>
+          </div>
+          <div class="hologram-main">
+            <div class="hologram-avatar-glow-ring">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="Profile" id="hologram-avatar">
+            </div>
+            <div class="hologram-meta">
+              <h2 id="hologram-name">Sarah Jenkins</h2>
+              <p><span id="hologram-age">28</span> Yrs • <span id="hologram-gender">Female</span></p>
+            </div>
+          </div>
+          <div class="hologram-stats-row">
+            <div class="hologram-stat-col">
+              <span class="label">BLOOD</span>
+              <span class="val text-rose" id="hologram-blood">A+</span>
+            </div>
+            <div class="hologram-stat-col">
+              <span class="label">HEIGHT</span>
+              <span class="val text-cyan" id="hologram-height">168 cm</span>
+            </div>
+            <div class="hologram-stat-col">
+              <span class="label">WEIGHT</span>
+              <span class="val text-purple" id="hologram-weight">62 kg</span>
+            </div>
+          </div>
+          <div class="hologram-medical-details">
+            <div class="medical-detail-block">
+              <span class="detail-label"><i data-lucide="alert-triangle"></i> ALLERGIES:</span>
+              <span class="detail-val" id="hologram-allergies">Peanuts, Penicillin</span>
+            </div>
+            <div class="medical-detail-block">
+              <span class="detail-label"><i data-lucide="heart"></i> HISTORY:</span>
+              <span class="detail-val" id="hologram-history">Mild Asthma in childhood</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Glassmorphism Form Tabs -->
+        <div class="profile-tabs-nav">
+          <button type="button" class="profile-tab-btn active" data-profile-tab="tab-identity">
+            <i data-lucide="user"></i> <span>Identity</span>
+          </button>
+          <button type="button" class="profile-tab-btn" data-profile-tab="tab-metrics">
+            <i data-lucide="activity"></i> <span>Metrics</span>
+          </button>
+          <button type="button" class="profile-tab-btn" data-profile-tab="tab-medical">
+            <i data-lucide="shield-alert"></i> <span>Clinical</span>
+          </button>
+        </div>
+
+        <form id="profile-edit-form" onsubmit="event.preventDefault();">
+          <!-- TAB 1: IDENTITY -->
+          <div class="profile-tab-content active" id="tab-identity">
+            <div class="avatar-selection-row">
+              <div class="avatar-preview-container">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="Profile" id="settings-avatar-preview">
+                <div class="avatar-badge" id="upload-custom-trigger"><i data-lucide="camera"></i></div>
+              </div>
+              <div class="avatar-select-options">
+                <div class="avatar-field-wrapper">
+                  <label for="avatar-presets" class="field-label-sm">Select Preset Profile Picture</label>
+                  <select id="avatar-presets" class="form-select">
+                    <option value="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256">Female Professional</option>
+                    <option value="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256">Male Corporate</option>
+                    <option value="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=256">Female Casual</option>
+                    <option value="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256">Male Active</option>
+                  </select>
+                </div>
+                <div class="avatar-upload-wrapper" style="margin-top: 10px;">
+                  <button type="button" class="action-btn-secondary btn-sm" id="upload-custom-avatar-btn" style="padding: 6px 12px; font-size: 11px;">
+                    <i data-lucide="upload-cloud"></i> Upload Custom Photo
+                  </button>
+                  <input type="file" id="avatar-file-input" accept="image/*" style="display: none;">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-name">Full Name</label>
+              <div class="input-with-icon">
+                <i data-lucide="user"></i>
+                <input type="text" id="prof-name" class="form-input" value="Sarah Jenkins" placeholder="Enter full name">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="prof-gender">Biological Sex</label>
+                <div class="input-with-icon">
+                  <i data-lucide="venus-mars"></i>
+                  <select id="prof-gender" class="form-select">
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other / Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="prof-age">Age (Years)</label>
+                <div class="input-with-icon">
+                  <i data-lucide="calendar"></i>
+                  <input type="number" id="prof-age" class="form-input" value="28" min="0" max="120">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: PHYSICAL METRICS -->
+          <div class="profile-tab-content" id="tab-metrics">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="prof-weight">Weight (kg)</label>
+                <div class="input-with-icon">
+                  <i data-lucide="scale"></i>
+                  <input type="number" id="prof-weight" class="form-input" value="62" placeholder="e.g. 70" step="0.1">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="prof-height">Height (cm)</label>
+                <div class="input-with-icon">
+                  <i data-lucide="ruler"></i>
+                  <input type="number" id="prof-height" class="form-input" value="168" placeholder="e.g. 175" step="0.1">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-blood">Blood Group</label>
+              <div class="input-with-icon">
+                <i data-lucide="droplet" style="color: var(--accent-rose);"></i>
+                <select id="prof-blood" class="form-select">
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: MEDICAL CLINICAL -->
+          <div class="profile-tab-content" id="tab-medical">
+            <div class="form-group">
+              <label for="prof-allergies">Known Allergies</label>
+              <div class="input-with-icon">
+                <i data-lucide="alert-triangle" style="color: var(--accent-amber);"></i>
+                <input type="text" id="prof-allergies" class="form-input" placeholder="e.g. Peanuts, Penicillin, Pollen (or None)" value="Peanuts, Penicillin">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="prof-history">Clinical Medical History</label>
+              <div class="input-with-icon align-items-start">
+                <i data-lucide="heart" style="color: var(--accent-rose); margin-top: 10px;"></i>
+                <textarea id="prof-history" class="form-input" rows="4" placeholder="e.g. Mild Asthma in childhood, Hypertension, surgeries, etc.">Mild Asthma in childhood</textarea>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="action-btn-primary full-width" id="save-profile-btn" style="margin-top: 15px;">
+            <i data-lucide="activity" class="btn-spinner" style="display:none; animation: spin-slow 2s linear infinite;"></i>
+            <span>Save Profile Configuration</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script logic -->
+  <script src="app.js"></script>
+</body>
+</html>
