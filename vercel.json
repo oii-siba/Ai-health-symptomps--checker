@@ -4,6 +4,22 @@
     {
       "src": "app.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "styles.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "app.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "logo.jpg",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -12,8 +28,20 @@
       "dest": "app.py"
     },
     {
+      "src": "/styles.css",
+      "dest": "/styles.css"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/logo.jpg",
+      "dest": "/logo.jpg"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/index.html"
     }
   ]
 }
