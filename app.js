@@ -18,6 +18,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  // --- HOISTED STATE VARIABLES FOR FIREBASE ---
+  function getCurrentTimeString() {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // --- APP STATE ---
+  let appState = {
+    user: {
+      name: 'Sarah Jenkins',
+      age: 28,
+      gender: 'Female',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
+      weight: 62,
+      height: 168,
+      bloodGroup: 'A+',
+      allergies: 'Peanuts, Penicillin',
+      medicalHistory: 'Mild Asthma in childhood'
+    },
+    selectedSymptoms: new Set(),
+    activeTab: 'checker',
+    currentWizardStep: 1,
+    savedDiagnostics: [],
+    chatHistory: [
+      {
+        sender: 'bot',
+        text: 'Hello! I am your AI_health Assistant. I can help answer health-related questions, explain medical terminology, or suggest diet and fitness tips. What can I do for you today?',
+        time: getCurrentTimeString()
+      }
+    ],
+    lastGeneratedReport: null
+  };
+
+  let userMeds = [];
+
+  let hydrationData = {
+    target: 2000,
+    current: 0,
+    lastLoggedDate: ''
+  };
+
+  let sleepLogs = [];
+
+
   // --- FIREBASE CONFIGURATION ---
   // Insert your Firebase configuration details here.
   // You can get this from the Firebase Console (https://console.firebase.google.com/)
@@ -425,32 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   ];
 
-  // --- APP STATE ---
-  let appState = {
-    user: {
-      name: 'Sarah Jenkins',
-      age: 28,
-      gender: 'Female',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-      weight: 62,
-      height: 168,
-      bloodGroup: 'A+',
-      allergies: 'Peanuts, Penicillin',
-      medicalHistory: 'Mild Asthma in childhood'
-    },
-    selectedSymptoms: new Set(),
-    activeTab: 'checker',
-    currentWizardStep: 1,
-    savedDiagnostics: [],
-    chatHistory: [
-      {
-        sender: 'bot',
-        text: 'Hello! I am your AI_health Assistant. I can help answer health-related questions, explain medical terminology, or suggest diet and fitness tips. What can I do for you today?',
-        time: getCurrentTimeString()
-      }
-    ],
-    lastGeneratedReport: null
-  };
+
 
   // --- DOM ELEMENTS CACHE ---
   // Tabs & Nav
@@ -603,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const addMedForm = document.getElementById('add-med-form');
   const todayMedsList = document.getElementById('today-meds-list');
-  let userMeds = [];
+
 
   const currentWaterVal = document.getElementById('current-water-val');
   const targetWaterVal = document.getElementById('target-water-val');
@@ -611,15 +630,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const waterFillPercent = document.getElementById('water-fill-percent');
   const resetWaterBtn = document.getElementById('reset-water-btn');
   const waterReminderToggle = document.getElementById('water-reminder-toggle');
-  let hydrationData = {
-    target: 2000,
-    current: 0,
-    lastLoggedDate: ''
-  };
+
 
   const sleepForm = document.getElementById('sleep-log-form');
   const sleepHistoryList = document.getElementById('sleep-history-list');
-  let sleepLogs = [];
+
 
   const calcBmiBtn = document.getElementById('calc-bmi-btn');
   const bmiResultPanel = document.getElementById('bmi-result-panel');
@@ -2679,13 +2694,7 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     return val.charAt(0).toUpperCase() + val.slice(1);
   }
 
-  function getCurrentTimeString() {
-    return new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  }
+
 
   function escapeHtml(text) {
     const map = {
