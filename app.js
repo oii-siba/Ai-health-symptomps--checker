@@ -1140,7 +1140,18 @@ const startApp = () => {
     settingsAvatarPreview.src = currentAvatarUrl;
     // Only update avatar-presets dropdown if value matches a preset option
     const presetMatch = Array.from(avatarPresets.options).find(o => o.value === currentAvatarUrl);
-    if (presetMatch) avatarPresets.value = currentAvatarUrl;
+    if (presetMatch) {
+      avatarPresets.value = currentAvatarUrl;
+    } else if (currentAvatarUrl) {
+      let customOpt = Array.from(avatarPresets.options).find(o => o.value === 'custom');
+      if (!customOpt) {
+        customOpt = document.createElement('option');
+        customOpt.value = 'custom';
+        customOpt.textContent = 'Custom Photo / Uploaded';
+        avatarPresets.appendChild(customOpt);
+      }
+      avatarPresets.value = 'custom';
+    }
     profNameInput.value = appState.user.name || '';
     profGenderInput.value = appState.user.gender || 'Female';
     profAgeInput.value = appState.user.age || '';
@@ -1249,6 +1260,15 @@ const startApp = () => {
           settingsAvatarPreview.src = base64Url;
           const hologramAvatar = document.getElementById('hologram-avatar');
           if (hologramAvatar) hologramAvatar.src = base64Url;
+          
+          let customOpt = Array.from(avatarPresets.options).find(o => o.value === 'custom');
+          if (!customOpt) {
+            customOpt = document.createElement('option');
+            customOpt.value = 'custom';
+            customOpt.textContent = 'Custom Photo / Uploaded';
+            avatarPresets.appendChild(customOpt);
+          }
+          avatarPresets.value = 'custom';
         };
         reader.readAsDataURL(file);
       }

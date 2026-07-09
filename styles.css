@@ -3192,3 +3192,55 @@ body {
   width: 18px;
   height: 18px;
 }
+
+/* Profile Modal Tabs Styling */
+.profile-tabs-nav {
+  display: flex;
+  background: rgba(7, 10, 19, 0.4);
+  border: 1px solid var(--glass-border);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  gap: 6px;
+}
+
+.profile-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-tab-btn i {
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.profile-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+}
+
+.profile-tab-btn.active {
+  background: rgba(14, 165, 233, 0.15);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.05);
+}
+
+.profile-tab-btn.active i {
+  color: var(--accent-cyan);
+}
