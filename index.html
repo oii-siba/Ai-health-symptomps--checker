@@ -879,6 +879,11 @@
                 <video id="skin-video" autoplay playsinline style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md);"></video>
                 <canvas id="skin-canvas" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md);"></canvas>
                 
+                <!-- Floating Flip Camera Button (Only shown when camera stream is active) -->
+                <button id="flip-skin-camera-btn" title="Flip Camera" style="display: none; position: absolute; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 15, 30, 0.75); border: 1.5px solid var(--glass-border); color: white; cursor: pointer; align-items: center; justify-content: center; z-index: 10; backdrop-filter: blur(8px); transition: all 0.3s ease;">
+                  <i data-lucide="switch-camera" style="width: 20px; height: 20px;"></i>
+                </button>
+                
                 <!-- Placeholder Graphic -->
                 <div id="skin-placeholder" class="camera-placeholder" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px;">
                   <i data-lucide="image" class="placeholder-icon" style="width: 48px; height: 48px; color: var(--text-muted); margin-bottom: 12px;"></i>

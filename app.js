@@ -648,8 +648,10 @@ const startApp = () => {
   const voiceSearchBtn = document.getElementById('voice-search-btn');
   
   let skinStream = null;
+  let skinFacingMode = 'environment';
   const startSkinCamBtn = document.getElementById('start-skin-camera-btn');
   const captureSkinBtn = document.getElementById('capture-skin-btn');
+  const flipSkinCameraBtn = document.getElementById('flip-skin-camera-btn');
   const skinFileInput = document.getElementById('skin-file-input');
   const skinVideo = document.getElementById('skin-video');
   const skinCanvas = document.getElementById('skin-canvas');
@@ -3045,11 +3047,13 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
         return;
       }
       try {
-        skinStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        skinFacingMode = 'environment';
+        skinStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: skinFacingMode } });
         skinVideo.srcObject = skinStream;
         skinVideo.style.display = 'block';
         skinPlaceholder.style.display = 'none';
         captureSkinBtn.style.display = 'block';
+        if (flipSkinCameraBtn) flipSkinCameraBtn.style.display = 'flex';
         startSkinCamBtn.innerHTML = `<i data-lucide="video-off"></i> <span>Stop Camera</span>`;
         lucide.createIcons();
       } catch (err) {
@@ -3057,6 +3061,26 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
         alert("Could not access camera. Please upload an image or check permissions.");
       }
     });
+
+    if (flipSkinCameraBtn) {
+      flipSkinCameraBtn.addEventListener('click', async () => {
+        if (!skinStream) return;
+        
+        // Release active camera tracks
+        skinStream.getTracks().forEach(track => track.stop());
+        
+        // Toggle lens mode
+        skinFacingMode = (skinFacingMode === 'environment') ? 'user' : 'environment';
+        
+        try {
+          skinStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: skinFacingMode } });
+          skinVideo.srcObject = skinStream;
+        } catch (err) {
+          console.error("Camera flip error:", err);
+          alert("Could not switch camera lens.");
+        }
+      });
+    }
     
     captureSkinBtn.addEventListener('click', () => {
       if (!skinStream) return;
@@ -3119,6 +3143,7 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     }
     skinVideo.srcObject = null;
     if (captureSkinBtn) captureSkinBtn.style.display = 'none';
+    if (flipSkinCameraBtn) flipSkinCameraBtn.style.display = 'none';
     if (startSkinCamBtn) startSkinCamBtn.innerHTML = `<i data-lucide="video"></i> <span>Start Camera</span>`;
     lucide.createIcons();
   }
