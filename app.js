@@ -70,7 +70,8 @@ const startApp = () => {
       height: 168,
       bloodGroup: 'A+',
       allergies: 'Peanuts, Penicillin',
-      medicalHistory: 'Mild Asthma in childhood'
+      medicalHistory: 'Mild Asthma in childhood',
+      location: 'San Francisco'
     },
     selectedSymptoms: new Set(),
     activeTab: 'checker',
@@ -628,6 +629,8 @@ const startApp = () => {
   const profBloodInput = document.getElementById('prof-blood');
   const profAllergiesInput = document.getElementById('prof-allergies');
   const profHistoryInput = document.getElementById('prof-history');
+  const profLocationInput = document.getElementById('prof-location');
+  const bookAppointmentBtn = document.getElementById('book-appointment-btn');
 
   // Track current avatar URL separately (reading .src from DOM gives absolute URL with origin prepended)
   let currentAvatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
@@ -1181,6 +1184,7 @@ const startApp = () => {
     if (profBloodInput) profBloodInput.value = appState.user.bloodGroup || 'A+';
     if (profAllergiesInput) profAllergiesInput.value = appState.user.allergies || '';
     if (profHistoryInput) profHistoryInput.value = appState.user.medicalHistory || '';
+    if (profLocationInput) profLocationInput.value = appState.user.location || '';
 
     // Update holographic health ID card fields
     const hologramAvatar = document.getElementById('hologram-avatar');
@@ -1368,7 +1372,8 @@ const startApp = () => {
       height: parseFloat(profHeightInput ? profHeightInput.value : '') || null,
       bloodGroup: profBloodInput ? profBloodInput.value : 'A+',
       allergies: profAllergiesInput ? profAllergiesInput.value.trim() : '',
-      medicalHistory: profHistoryInput ? profHistoryInput.value.trim() : ''
+      medicalHistory: profHistoryInput ? profHistoryInput.value.trim() : '',
+      location: profLocationInput ? profLocationInput.value.trim() : ''
     };
 
     try {
@@ -2756,6 +2761,36 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
       window.location.href = 'tel:8207004928';
     }
   });
+
+  // --- BOOK APPOINTMENT FOR NEAREST HOSPITAL ---
+  if (bookAppointmentBtn) {
+    bookAppointmentBtn.addEventListener('click', () => {
+      const userLocation = appState.user.location;
+      
+      if (userLocation && userLocation.trim() !== '') {
+        const url = `https://www.google.com/maps/search/?api=1&query=hospitals+near+${encodeURIComponent(userLocation.trim())}`;
+        window.open(url, '_blank');
+      } else {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              const url = `https://www.google.com/maps/search/?api=1&query=hospitals&center=${lat},${lng}&zoom=14`;
+              window.open(url, '_blank');
+            },
+            (error) => {
+              const url = 'https://www.google.com/maps/search/?api=1&query=hospitals+near+me';
+              window.open(url, '_blank');
+            }
+          );
+        } else {
+          const url = 'https://www.google.com/maps/search/?api=1&query=hospitals+near+me';
+          window.open(url, '_blank');
+        }
+      }
+    });
+  }
 
 
   // --- HELPER UTILITIES ---

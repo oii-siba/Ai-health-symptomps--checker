@@ -55,13 +55,19 @@ def init_db():
                 height REAL,
                 blood_group TEXT,
                 allergies TEXT,
-                medical_history TEXT
+                medical_history TEXT,
+                location TEXT
             )
         ''')
+        try:
+            conn.execute("ALTER TABLE profile ADD COLUMN location TEXT")
+        except sqlite3.OperationalError:
+            pass
+
         # Insert default profile if not exists
         conn.execute('''
-            INSERT OR IGNORE INTO profile (id, name, age, gender, avatar, weight, height, blood_group, allergies, medical_history)
-            VALUES (1, 'Sarah Jenkins', 28, 'Female', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256', 62.0, 168.0, 'A+', 'Peanuts, Penicillin', 'Mild Asthma in childhood')
+            INSERT OR IGNORE INTO profile (id, name, age, gender, avatar, weight, height, blood_group, allergies, medical_history, location)
+            VALUES (1, 'Sarah Jenkins', 28, 'Female', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256', 62.0, 168.0, 'A+', 'Peanuts, Penicillin', 'Mild Asthma in childhood', 'San Francisco')
         ''')
         
         # 2. Medications table
@@ -138,12 +144,12 @@ def profile_api():
             UPDATE profile SET 
                 name = ?, age = ?, gender = ?, avatar = ?,
                 weight = ?, height = ?, blood_group = ?,
-                allergies = ?, medical_history = ?
+                allergies = ?, medical_history = ?, location = ?
             WHERE id = 1
         ''', (
             data.get('name'), data.get('age'), data.get('gender'), data.get('avatar'),
             data.get('weight'), data.get('height'), data.get('bloodGroup'),
-            data.get('allergies'), data.get('medicalHistory')
+            data.get('allergies'), data.get('medicalHistory'), data.get('location')
         ))
         conn.commit()
         row = conn.execute('SELECT * FROM profile WHERE id = 1').fetchone()
