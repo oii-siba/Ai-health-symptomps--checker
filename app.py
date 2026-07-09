@@ -538,10 +538,103 @@ BLOOD_BIOMARKERS_MOCK = [
     { 'name': 'Platelets Count', 'value': 280, 'ref': '150 - 450 x10^3/uL', 'status': 'normal' }
 ]
 
+def validate_blood_report(file):
+    filename = file.filename.lower()
+    
+    # Check file extension
+    ext = filename.split('.')[-1] if '.' in filename else ''
+    
+    # 1. If it is a text-based format, check content keywords
+    if ext in ['txt', 'csv', 'tsv', 'json']:
+        try:
+            content = file.read().decode('utf-8', errors='ignore').lower()
+            file.seek(0) # reset stream
+            keywords = ["blood", "report", "lab", "test", "cbc", "wbc", "rbc", "cholesterol", "glucose", "platelet", "hemoglobin", "ref", "range", "mg/dl", "ul", "count", "value", "status"]
+            matches = sum(1 for kw in keywords if kw in content)
+            if matches >= 2:
+                return True
+            return False
+        except Exception:
+            return True
+            
+    # 2. If it is an image, check layout and text contours using OpenCV
+    if ext in ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff']:
+        try:
+            import cv2
+            
+            # Read image bytes
+            img_bytes = file.read()
+            file.seek(0) # reset stream
+            
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            if img is None:
+                return False
+                
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            
+            # Check light background ratio: reports are mostly white/light gray
+            h, w = gray.shape
+            total_pixels = h * w
+            if total_pixels == 0:
+                return False
+                
+            light_pixels = np.sum(gray > 170)
+            light_ratio = light_pixels / total_pixels
+            print(f"Blood report validation - Light ratio: {light_ratio:.4f}")
+            
+            # Binarize to find text contours
+            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            
+            # Find contours
+            contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            # Count small text-like contours
+            text_contour_count = 0
+            for cnt in contours:
+                x, y, w_c, h_c = cv2.boundingRect(cnt)
+                # Typical letter dimensions in a standard report image
+                if 2 <= w_c <= 80 and 4 <= h_c <= 80:
+                    text_contour_count += 1
+                    
+            print(f"Blood report validation - Text-like contours: {text_contour_count}")
+            
+            filename_has_keywords = any(kw in filename for kw in ["blood", "report", "lab", "test", "cbc", "medical", "result", "analysis", "biomarker", "patient", "clinic"])
+            
+            if filename_has_keywords:
+                if light_ratio > 0.30 or text_contour_count > 10:
+                    return True
+            else:
+                if light_ratio > 0.40 and text_contour_count > 30:
+                    return True
+                    
+            return False
+        except Exception as e:
+            print("Error in blood report validation:", e)
+            return True
+            
+    # For PDF, check filename keywords or return True
+    if ext == 'pdf':
+        filename_has_keywords = any(kw in filename for kw in ["blood", "report", "lab", "test", "cbc", "medical", "result", "analysis", "biomarker", "patient", "clinic"])
+        return filename_has_keywords
+        
+    return True
+
 @app.route('/api/analyze-blood', methods=['POST'])
 def analyze_blood():
     if 'report' not in request.files:
         return jsonify({'error': 'No document file uploaded'}), 400
+        
+    file = request.files['report']
+    if file.filename == '':
+        return jsonify({'error': 'No document file uploaded'}), 400
+        
+    # Validate if file is a blood report
+    if not validate_blood_report(file):
+        return jsonify({
+            'success': False,
+            'error': 'no_blood_report_detected'
+        })
     
     # Simulate a document extraction delay or process
     return jsonify({

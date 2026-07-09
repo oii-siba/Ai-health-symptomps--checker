@@ -4027,12 +4027,32 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
           if (data.success) {
             renderBloodResults(data.biomarkers);
           } else {
-            renderBloodResults(BLOOD_BIOMARKERS_MOCK);
+            const lang = appState.currentLanguage || 'en';
+            let errorMsg = "";
+            if (lang === 'bn') {
+              errorMsg = "আপলোড করা ছবি/ফাইলে কোনো সঠিক রক্তের রিপোর্ট পাওয়া যায়নি। অনুগ্রহ করে রক্তের রিপোর্টের একটি পরিষ্কার ছবি বা নথি আপলোড করুন।";
+            } else if (lang === 'hi') {
+              errorMsg = "अपलोड की गई छवि/फ़ाइल में कोई वैध रक्त रिपोर्ट नहीं मिली। कृपया रक्त रिपोर्ट का एक स्पष्ट चित्र या दस्तावेज़ अपलोड करें।";
+            } else {
+              errorMsg = "No valid blood report detected in the uploaded image/file. Please upload a clear photo or document of a blood report.";
+            }
+            alert(errorMsg);
+            if (resetBloodBtn) resetBloodBtn.click();
           }
         })
         .catch(err => {
           console.error("Blood analysis upload error:", err);
-          renderBloodResults(BLOOD_BIOMARKERS_MOCK);
+          const lang = appState.currentLanguage || 'en';
+          let errorMsg = "";
+          if (lang === 'bn') {
+            errorMsg = "রক্তের রিপোর্ট বিশ্লেষণ করতে ব্যর্থ হয়েছে।";
+          } else if (lang === 'hi') {
+            errorMsg = "रक्त रिपोर्ट का विश्लेषण करने में विफल।";
+          } else {
+            errorMsg = "Failed to analyze blood report.";
+          }
+          alert(errorMsg);
+          if (resetBloodBtn) resetBloodBtn.click();
         });
       }
     }, 40);
