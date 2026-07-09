@@ -28,16 +28,24 @@
       "dest": "app.py"
     },
     {
-      "src": "/styles.css",
+      "src": "/styles\\.css",
       "dest": "/styles.css"
     },
     {
-      "src": "/app.js",
+      "src": "/app\\.js",
       "dest": "/app.js"
     },
     {
-      "src": "/logo.jpg",
+      "src": "/logo\\.jpg",
       "dest": "/logo.jpg"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/index\\.html",
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",
