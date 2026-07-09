@@ -18,6 +18,41 @@ const startApp = () => {
     };
   }
 
+  // --- MOBILE SIDEBAR DRAWER TOGGLE CONTROL ---
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.querySelector('.sidebar');
+  let overlay = document.querySelector('.sidebar-overlay');
+  
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  if (mobileMenuBtn && sidebar) {
+    mobileMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('active');
+      overlay.style.display = sidebar.classList.contains('active') ? 'block' : 'none';
+    });
+    
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('active');
+      overlay.style.display = 'none';
+    });
+
+    // Close menu when clicking a nav item on mobile
+    const navItemsList = sidebar.querySelectorAll('.nav-item');
+    navItemsList.forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 900) {
+          sidebar.classList.remove('active');
+          overlay.style.display = 'none';
+        }
+      });
+    });
+  }
+
   // --- HOISTED STATE VARIABLES FOR FIREBASE ---
   function getCurrentTimeString() {
     const now = new Date();
