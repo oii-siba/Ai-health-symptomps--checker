@@ -92,6 +92,31 @@ const startApp = () => {
     console.log("Firebase is in local mode. Fill in firebaseConfig at the top of app.js to enable Google Login & Firestore sync.");
   }
 
+  function openProfileModal(e) {
+    if (e) e.stopPropagation();
+    
+    if (appState.user) {
+      if (profNameInput) profNameInput.value = appState.user.name || '';
+      if (profGenderInput) profGenderInput.value = appState.user.gender || 'Female';
+      if (profAgeInput) profAgeInput.value = appState.user.age || 28;
+      if (profWeightInput) profWeightInput.value = appState.user.weight || '';
+      if (profHeightInput) profHeightInput.value = appState.user.height || '';
+      if (profBloodInput) profBloodInput.value = appState.user.bloodGroup || appState.user.blood_group || 'A+';
+      if (profAllergiesInput) profAllergiesInput.value = appState.user.allergies || '';
+      if (profHistoryInput) profHistoryInput.value = appState.user.medicalHistory || appState.user.clinical_history || '';
+      
+      // Update avatar preset preview
+      if (settingsAvatarPreview) {
+        settingsAvatarPreview.src = appState.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
+      }
+      currentAvatarUrl = appState.user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
+    }
+    
+    if (settingsModal) {
+      settingsModal.style.display = 'flex';
+    }
+  }
+
   function renderAuthUI() {
     const container = document.getElementById('user-profile-container');
     if (!container) return;
@@ -99,7 +124,7 @@ const startApp = () => {
     if (!auth) {
       // Firebase not configured - show default fallback card
       container.innerHTML = `
-        <div class="user-profile-card">
+        <div class="user-profile-card" style="cursor: pointer;">
           <div class="profile-avatar">
             <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256" alt="User avatar" id="profile-img">
             <span class="status-indicator online"></span>
@@ -117,6 +142,15 @@ const startApp = () => {
       `;
       const editBtn = container.querySelector('#open-settings-btn');
       if (editBtn) editBtn.addEventListener('click', openProfileModal);
+
+      const card = container.querySelector('.user-profile-card');
+      if (card) {
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.profile-actions-row') && !e.target.closest('button')) {
+            openProfileModal(e);
+          }
+        });
+      }
       lucide.createIcons();
       return;
     }
@@ -124,7 +158,7 @@ const startApp = () => {
     if (currentUser) {
       // User is logged in
       container.innerHTML = `
-        <div class="user-profile-card">
+        <div class="user-profile-card" style="cursor: pointer;">
           <div class="profile-avatar">
             <img src="${currentUser.photoURL || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}" alt="User avatar" id="profile-img">
             <span class="status-indicator online"></span>
@@ -146,6 +180,15 @@ const startApp = () => {
 
       const editBtn = container.querySelector('#open-settings-btn');
       if (editBtn) editBtn.addEventListener('click', openProfileModal);
+      
+      const card = container.querySelector('.user-profile-card');
+      if (card) {
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.profile-actions-row') && !e.target.closest('button')) {
+            openProfileModal(e);
+          }
+        });
+      }
 
       const logoutBtn = container.querySelector('#google-logout-btn');
       if (logoutBtn) {
@@ -1127,18 +1170,8 @@ const startApp = () => {
 
   // Settings Modal Controls
   // Open settings when clicking profile card or sliders button
-  const userProfileCard = document.querySelector('.user-profile-card');
-  if (userProfileCard) {
-    userProfileCard.addEventListener('click', (e) => {
-      settingsModal.style.display = 'flex';
-    });
-  }
-  
   if (openSettingsBtn) {
-    openSettingsBtn.addEventListener('click', (e) => {
-      e.stopPropagation(); // prevent card double trigger
-      settingsModal.style.display = 'flex';
-    });
+    openSettingsBtn.addEventListener('click', openProfileModal);
   }
 
   closeSettingsBtn.addEventListener('click', () => {
