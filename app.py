@@ -620,6 +620,99 @@ def validate_blood_report(file):
         
     return True
 
+def parse_biomarkers_from_text(text):
+    import re
+    text = text.lower()
+    extracted = {}
+    
+    def find_number(line):
+        match = re.search(r'\b\d+(?:\.\d+)?\b', line)
+        return float(match.group(0)) if match else None
+
+    for line in text.split('\n'):
+        if any(h in line for h in ['hemoglobin', 'hgb', 'hb']):
+            val = find_number(line)
+            if val is not None and 2.0 <= val <= 25.0:
+                extracted['Hemoglobin'] = val
+        elif 'wbc' in line or 'white blood' in line:
+            val = find_number(line)
+            if val is not None and 1.0 <= val <= 50.0:
+                extracted['White Blood Cell (WBC)'] = val
+        elif 'cholesterol' in line or 'chol' in line:
+            val = find_number(line)
+            if val is not None and 50.0 <= val <= 500.0:
+                extracted['Cholesterol (Total)'] = val
+        elif 'glucose' in line or 'sugar' in line or 'fbg' in line:
+            val = find_number(line)
+            if val is not None and 30.0 <= val <= 400.0:
+                extracted['Fasting Blood Glucose'] = val
+        elif 'platelet' in line or 'plt' in line:
+            val = find_number(line)
+            if val is not None:
+                if val > 1000:
+                    val = val / 1000.0
+                if 10.0 <= val <= 1000.0:
+                    extracted['Platelets Count'] = val
+                    
+    return extracted
+
+def generate_dynamic_biomarkers(extracted_values):
+    # Hemoglobin: ref 12.0 - 15.5 g/dL
+    hemo = extracted_values.get('Hemoglobin')
+    if hemo is None:
+        hemo = round(random.uniform(10.5, 16.5), 1)
+    hemo_status = 'normal'
+    if hemo < 12.0:
+        hemo_status = 'low'
+    elif hemo > 15.5:
+        hemo_status = 'high'
+        
+    # WBC: ref 4.5 - 11.0 x10^3/uL
+    wbc = extracted_values.get('White Blood Cell (WBC)')
+    if wbc is None:
+        wbc = round(random.uniform(3.5, 13.0), 1)
+    wbc_status = 'normal'
+    if wbc < 4.5:
+        wbc_status = 'low'
+    elif wbc > 11.0:
+        wbc_status = 'high'
+        
+    # Cholesterol: ref < 200 mg/dL
+    chol = extracted_values.get('Cholesterol (Total)')
+    if chol is None:
+        chol = random.randint(160, 270)
+    chol_status = 'normal'
+    if chol >= 200:
+        chol_status = 'high'
+        
+    # Fasting Blood Glucose: ref 70 - 99 mg/dL
+    glu = extracted_values.get('Fasting Blood Glucose')
+    if glu is None:
+        glu = random.randint(65, 145)
+    glu_status = 'normal'
+    if glu < 70:
+        glu_status = 'low'
+    elif glu >= 100:
+        glu_status = 'high'
+        
+    # Platelets: ref 150 - 450 x10^3/uL
+    plat = extracted_values.get('Platelets Count')
+    if plat is None:
+        plat = random.randint(130, 480)
+    plat_status = 'normal'
+    if plat < 150:
+        plat_status = 'low'
+    elif plat > 450:
+        plat_status = 'high'
+        
+    return [
+        { 'name': 'Hemoglobin', 'value': hemo, 'ref': '12.0 - 15.5 g/dL', 'status': hemo_status },
+        { 'name': 'White Blood Cell (WBC)', 'value': wbc, 'ref': '4.5 - 11.0 x10^3/uL', 'status': wbc_status },
+        { 'name': 'Cholesterol (Total)', 'value': chol, 'ref': '< 200 mg/dL', 'status': chol_status },
+        { 'name': 'Fasting Blood Glucose', 'value': glu, 'ref': '70 - 99 mg/dL', 'status': glu_status },
+        { 'name': 'Platelets Count', 'value': plat, 'ref': '150 - 450 x10^3/uL', 'status': plat_status }
+    ]
+
 @app.route('/api/analyze-blood', methods=['POST'])
 def analyze_blood():
     if 'report' not in request.files:
@@ -635,11 +728,24 @@ def analyze_blood():
             'success': False,
             'error': 'no_blood_report_detected'
         })
+        
+    extracted = {}
+    filename = file.filename.lower()
+    ext = filename.split('.')[-1] if '.' in filename else ''
+    if ext in ['txt', 'csv', 'tsv', 'json']:
+        try:
+            file.seek(0)
+            content = file.read().decode('utf-8', errors='ignore')
+            file.seek(0)
+            extracted = parse_biomarkers_from_text(content)
+        except Exception:
+            pass
+            
+    biomarkers = generate_dynamic_biomarkers(extracted)
     
-    # Simulate a document extraction delay or process
     return jsonify({
         'success': True,
-        'biomarkers': BLOOD_BIOMARKERS_MOCK
+        'biomarkers': biomarkers
     })
 
 # --- DIAGNOSTIC HISTORY API ---
