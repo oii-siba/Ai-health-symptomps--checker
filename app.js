@@ -128,13 +128,16 @@ const startApp = () => {
     console.log("Firebase is in local mode. Fill in firebaseConfig at the top of app.js to enable Google Login & Firestore sync.");
   }
 
-  function openProfileModal(e) {
-    if (e) e.stopPropagation();
+  function openProfileModal(e, isInitial = false) {
+    if (e && e.stopPropagation) e.stopPropagation();
     
     updateProfileUI();
     
     if (settingsModal) {
       settingsModal.style.display = 'flex';
+      if (!isInitial) {
+        pushAppState('profile');
+      }
     }
   }
 
@@ -636,6 +639,18 @@ const startApp = () => {
   let currentAvatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
   let prescriptionBlobUrl = null;
 
+  // History State Helpers
+  let isHandlingPopState = false;
+
+  function pushAppState(stateName) {
+    if (isHandlingPopState) return;
+    try {
+      history.pushState({ appState: stateName }, '');
+    } catch (e) {
+      console.error("Failed to push history state:", e);
+    }
+  }
+
   // Body Region Popup Elements
   const regionPopup = document.getElementById('body-region-popup');
   const popupCloseBtn = document.getElementById('popup-close-btn');
@@ -1116,7 +1131,7 @@ const startApp = () => {
     }
 
     // Automatically open user profile modal on page load
-    openProfileModal();
+    openProfileModal(null, true);
   }
 
   // --- PROFILE MANAGEMENT ---
@@ -1236,13 +1251,21 @@ const startApp = () => {
   }
 
   closeSettingsBtn.addEventListener('click', () => {
-    settingsModal.style.display = 'none';
+    if (history.state && history.state.appState === 'profile') {
+      history.back();
+    } else {
+      settingsModal.style.display = 'none';
+    }
   });
 
   // Close modal when clicking background
   settingsModal.addEventListener('click', (e) => {
     if (e.target === settingsModal) {
-      settingsModal.style.display = 'none';
+      if (history.state && history.state.appState === 'profile') {
+        history.back();
+      } else {
+        settingsModal.style.display = 'none';
+      }
     }
   });
 
@@ -1438,7 +1461,11 @@ const startApp = () => {
     }
 
     updateProfileUI();
-    settingsModal.style.display = 'none';
+    if (history.state && history.state.appState === 'profile') {
+      history.back();
+    } else {
+      settingsModal.style.display = 'none';
+    }
   });
 
 
@@ -1446,12 +1473,24 @@ const startApp = () => {
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tabId = item.getAttribute('data-tab');
-      switchTab(tabId);
+      if (tabId === 'checker') {
+        if (history.state && history.state.appState) {
+          history.back();
+        } else {
+          switchTab(tabId);
+        }
+      } else {
+        switchTab(tabId);
+      }
     });
   });
 
   function switchTab(tabId) {
     appState.activeTab = tabId;
+    
+    if (tabId !== 'checker') {
+      pushAppState('tab-' + tabId);
+    }
     
     // Toggle Nav Buttons
     navItems.forEach(btn => {
@@ -1842,6 +1881,7 @@ const startApp = () => {
     stateEmpty.classList.remove('active');
     stateForm.classList.add('active');
     showStep(1);
+    pushAppState('wizard');
   });
 
   function showStep(stepNum) {
@@ -1963,6 +2003,9 @@ const startApp = () => {
       // Transition from scanning to results
       stateScanning.classList.remove('active');
       stateResults.classList.add('active');
+      try {
+        history.replaceState({ appState: 'results' }, '');
+      } catch (e) {}
     });
   });
 
@@ -2205,7 +2248,13 @@ const startApp = () => {
   }
 
   // Start new diagnosis button
-  resetDiagnosticsBtn.addEventListener('click', resetCheckerState);
+  resetDiagnosticsBtn.addEventListener('click', () => {
+    if (history.state && history.state.appState) {
+      history.back();
+    } else {
+      resetCheckerState();
+    }
+  });
 
   function resetCheckerState() {
     appState.selectedSymptoms.clear();
@@ -2550,6 +2599,7 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     stateResults.classList.add('active');
     
     switchTab('checker');
+    pushAppState('results');
   }
 
   async function deleteReportFromHistory(id) {
@@ -4283,6 +4333,51 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
       element.style.color = 'var(--accent-teal)';
     }
   }
+
+  // Handle browser back and forward state pops
+  window.addEventListener('popstate', (event) => {
+    isHandlingPopState = true;
+    
+    // Close transient settings modal and region overlays by default
+    if (settingsModal) {
+      settingsModal.style.display = 'none';
+    }
+    const regionPopup = document.getElementById('body-region-popup');
+    if (regionPopup) {
+      regionPopup.style.display = 'none';
+    }
+    
+    const state = event.state;
+    if (!state || !state.appState) {
+      resetCheckerState();
+      switchTab('checker');
+    } else {
+      const appStateVal = state.appState;
+      if (appStateVal === 'wizard') {
+        stateEmpty.classList.remove('active');
+        stateScanning.classList.remove('active');
+        stateResults.classList.remove('active');
+        stateForm.classList.add('active');
+        showStep(appState.currentWizardStep || 1);
+        switchTab('checker');
+      } else if (appStateVal === 'results') {
+        stateEmpty.classList.remove('active');
+        stateForm.classList.remove('active');
+        stateScanning.classList.remove('active');
+        stateResults.classList.add('active');
+        switchTab('checker');
+      } else if (appStateVal === 'profile') {
+        if (settingsModal) {
+          settingsModal.style.display = 'flex';
+        }
+      } else if (appStateVal.startsWith('tab-')) {
+        const tabId = appStateVal.substring(4);
+        switchTab(tabId);
+      }
+    }
+    
+    isHandlingPopState = false;
+  });
 
 };
 
