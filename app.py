@@ -1486,13 +1486,6 @@ def render_prescription_page(report_id, print_mode=False):
     loc = profile['location'] if (profile and profile['location']) else ''
     hospital_name, emergency_no = get_hospital_emergency_number(loc)
     
-    # Check for custom medical history fallback
-    if loc == '' and profile and '8207' in str(profile.get('medical_history')):
-        custom_no = profile['medical_history']
-        if custom_no and len(str(custom_no)) >= 5:
-            emergency_no = custom_no
-            hospital_name = "Emergency Contact"
-        
     # HTML Layout matching the image
     html_content = f"""
     <!DOCTYPE html>
