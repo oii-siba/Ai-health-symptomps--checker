@@ -2350,6 +2350,7 @@ const startApp = () => {
   function generatePrescriptionBlobUrl(report) {
     if (!report) return '#';
     const user   = appState.user || {};
+    const hospital = getHospitalEmergencyNumber(user.location || '');
     const patientName   = user.name   || 'Patient';
     const patientAge    = user.age    ? user.age + ' Years' : '--';
     const patientGender = user.gender || '--';
@@ -2464,7 +2465,7 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 <div class="ft">
   <div><div class="wt"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Warning Signs</div>
   <ul class="wl"><li>High fever (Above 102°F)</li><li>Difficulty in breathing</li><li>Chest pain or pressure</li><li>Severe headache or confusion</li><li>Persistent vomiting</li></ul>
-  <a href="tel:8207004928" class="sos"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>EMERGENCY: 8207004928</a></div>
+  <a href="tel:${hospital.number}" class="sos"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${hospital.name.toUpperCase()}: ${hospital.number}</a></div>
   <div><div class="ftl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Follow Up</div>
   <div class="fb">If symptoms do not improve within <strong>3–4 days</strong>, or worsen, please consult a medical doctor.</div>
   <div class="cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>AI Health Team</div></div>
@@ -2838,14 +2839,36 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
       lucide.createIcons();
     }
   });
-
+  function getHospitalEmergencyNumber(location) {
+    if (!location) return { name: "Nearest Hospital", number: "8207004928" };
+    const loc = location.toLowerCase().trim();
+    if (loc.includes("san francisco")) {
+      return { name: "San Francisco General Hospital", number: "6282068000" };
+    } else if (loc.includes("kolkata")) {
+      return { name: "Kolkata Medical College & Hospital", number: "8207004928" };
+    } else if (loc.includes("new york")) {
+      return { name: "New York-Presbyterian Hospital", number: "2127465454" };
+    } else if (loc.includes("london")) {
+      return { name: "St Thomas' Hospital London", number: "02071887188" };
+    } else if (loc.includes("mumbai")) {
+      return { name: "KEM Hospital Mumbai", number: "02224107000" };
+    } else if (loc.includes("delhi")) {
+      return { name: "AIIMS Delhi", number: "01126588500" };
+    } else if (loc.includes("bangalore") || loc.includes("bengaluru")) {
+      return { name: "Manipal Hospital Bengaluru", number: "08025024444" };
+    } else if (loc.includes("chennai")) {
+      return { name: "Apollo Hospital Chennai", number: "04428290200" };
+    }
+    return { name: "Nearest Hospital Emergency Services", number: "8207004928" };
+  }
 
   // --- GLOBAL EMERGENCY SOS ---
   
   emergencyTrigger.addEventListener('click', () => {
-    const sosChoice = confirm('EMERGENCY ALERT TRIGGERED\n\nWould you like to initiate a telephone call to your emergency contact (8207004928)?');
+    const hospital = getHospitalEmergencyNumber(appState.user ? appState.user.location : '');
+    const sosChoice = confirm(`EMERGENCY ALERT TRIGGERED\n\nWould you like to initiate a telephone call to your nearest hospital (${hospital.name}: ${hospital.number})?`);
     if (sosChoice) {
-      window.location.href = 'tel:8207004928';
+      window.location.href = `tel:${hospital.number}`;
     }
   });
 

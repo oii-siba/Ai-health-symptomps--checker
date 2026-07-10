@@ -1383,6 +1383,28 @@ def view_prescription(report_id):
 def print_prescription(report_id):
     return render_prescription_page(report_id, print_mode=True)
 
+def get_hospital_emergency_number(location):
+    if not location:
+        return "Nearest Hospital", "8207004928"
+    loc = str(location).lower().strip()
+    if "san francisco" in loc:
+        return "San Francisco General Hospital", "6282068000"
+    elif "kolkata" in loc:
+        return "Kolkata Medical College & Hospital", "8207004928"
+    elif "new york" in loc:
+        return "New York-Presbyterian Hospital", "2127465454"
+    elif "london" in loc:
+        return "St Thomas' Hospital London", "02071887188"
+    elif "mumbai" in loc:
+        return "KEM Hospital Mumbai", "02224107000"
+    elif "delhi" in loc:
+        return "AIIMS Delhi", "01126588500"
+    elif "bangalore" in loc or "bengaluru" in loc:
+        return "Manipal Hospital Bengaluru", "08025024444"
+    elif "chennai" in loc:
+        return "Apollo Hospital Chennai", "04428290200"
+    return "Nearest Hospital Emergency Services", "8207004928"
+
 def render_prescription_page(report_id, print_mode=False):
     conn = get_db()
     row = conn.execute('SELECT report_json FROM diagnostics_history WHERE id = ?', (report_id,)).fetchone()
@@ -1450,9 +1472,15 @@ def render_prescription_page(report_id, print_mode=False):
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=130x130&data={qr_data}"
     
     # Emergency number from profile or fallback
-    emergency_no = profile['medical_history'] if (profile and '8207' in str(profile.get('medical_history'))) else "8207004928"
-    if not emergency_no or len(str(emergency_no)) < 5:
-        emergency_no = "8207004928"
+    loc = profile['location'] if (profile and profile['location']) else ''
+    hospital_name, emergency_no = get_hospital_emergency_number(loc)
+    
+    # Check for custom medical history fallback
+    if loc == '' and profile and '8207' in str(profile.get('medical_history')):
+        custom_no = profile['medical_history']
+        if custom_no and len(str(custom_no)) >= 5:
+            emergency_no = custom_no
+            hospital_name = "Emergency Contact"
         
     # HTML Layout matching the image
     html_content = f"""
@@ -2113,7 +2141,7 @@ def render_prescription_page(report_id, print_mode=False):
                         </ul>
                         <a href="tel:{emergency_no}" class="emergency-pill">
                             <i data-lucide="phone"></i>
-                            <span>EMERGENCY: {emergency_no}</span>
+                            <span>{hospital_name.upper()}: {emergency_no}</span>
                         </a>
                     </div>
                     
