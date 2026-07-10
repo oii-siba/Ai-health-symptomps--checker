@@ -1113,6 +1113,9 @@ const startApp = () => {
         changeLanguage(e.target.value);
       });
     }
+
+    // Automatically open user profile modal on page load
+    openProfileModal();
   }
 
   // --- PROFILE MANAGEMENT ---
