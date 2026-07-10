@@ -84,7 +84,8 @@ const startApp = () => {
         time: getCurrentTimeString()
       }
     ],
-    lastGeneratedReport: null
+    lastGeneratedReport: null,
+    nearestHospital: { name: "San Francisco General Hospital", number: "6282068000" }
   };
 
   let userMeds = [];
@@ -1242,6 +1243,13 @@ const startApp = () => {
     if (downloadPrescriptionBtn && appState.lastGeneratedReport) {
       downloadPrescriptionBtn.href = generatePrescriptionBlobUrl(appState.lastGeneratedReport);
     }
+
+    // Dynamically resolve nearest hospital in the background
+    updateCachedHospital().then(() => {
+      if (downloadPrescriptionBtn && appState.lastGeneratedReport) {
+        downloadPrescriptionBtn.href = generatePrescriptionBlobUrl(appState.lastGeneratedReport);
+      }
+    });
   }
 
   // Settings Modal Controls
@@ -2350,7 +2358,7 @@ const startApp = () => {
   function generatePrescriptionBlobUrl(report) {
     if (!report) return '#';
     const user   = appState.user || {};
-    const hospital = getHospitalEmergencyNumber(user.location || '');
+    const hospital = appState.nearestHospital || { name: 'Emergency Services', number: '112' };
     const patientName   = user.name   || 'Patient';
     const patientAge    = user.age    ? user.age + ' Years' : '--';
     const patientGender = user.gender || '--';
@@ -2839,13 +2847,25 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
       lucide.createIcons();
     }
   });
-  function getHospitalEmergencyNumber(location) {
-    if (!location) return { name: "Nearest Hospital", number: "8207004928" };
+  function getDefaultEmergencyNumber(location) {
+    if (!location) return "112";
+    const loc = location.toLowerCase().trim();
+    if (loc.includes("us") || loc.includes("usa") || loc.includes("york") || loc.includes("francisco") || loc.includes("california")) {
+      return "911";
+    }
+    if (loc.includes("uk") || loc.includes("london") || loc.includes("united kingdom")) {
+      return "999";
+    }
+    return "112";
+  }
+
+  function getHospitalEmergencyNumberStatic(location) {
+    if (!location) return { name: "Emergency Services", number: "112" };
     const loc = location.toLowerCase().trim();
     if (loc.includes("san francisco")) {
       return { name: "San Francisco General Hospital", number: "6282068000" };
     } else if (loc.includes("kolkata")) {
-      return { name: "Kolkata Medical College & Hospital", number: "8207004928" };
+      return { name: "Kolkata Medical College & Hospital", number: "03322123789" };
     } else if (loc.includes("new york")) {
       return { name: "New York-Presbyterian Hospital", number: "2127465454" };
     } else if (loc.includes("london")) {
@@ -2859,13 +2879,84 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
     } else if (loc.includes("chennai")) {
       return { name: "Apollo Hospital Chennai", number: "04428290200" };
     }
-    return { name: "Nearest Hospital Emergency Services", number: "8207004928" };
+    return { name: "Emergency Services", number: getDefaultEmergencyNumber(location) };
+  }
+
+  async function resolveNearestHospital(location) {
+    let lat = null;
+    let lon = null;
+    
+    if (!location || location.trim() === '') {
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 });
+          });
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+        } catch (e) {
+          console.warn("Geolocation failed, using fallback.");
+        }
+      }
+    } else {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`, {
+          headers: { 'User-Agent': 'AegisHealthApp/1.0' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            lat = parseFloat(data[0].lat);
+            lon = parseFloat(data[0].lon);
+          }
+        }
+      } catch (e) {
+        console.warn("Geocoding failed for location:", location, e);
+      }
+    }
+    
+    if (lat !== null && lon !== null) {
+      try {
+        const query = `[out:json];node["amenity"="hospital"](around:15000,${lat},${lon});out;`;
+        const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.elements && data.elements.length > 0) {
+            for (const el of data.elements) {
+              const name = el.tags.name;
+              const phone = el.tags.phone || el.tags['contact:phone'] || el.tags.mobile || el.tags['contact:mobile'];
+              if (name && phone) {
+                const cleanPhone = phone.replace(/[^0-9+]/g, '');
+                if (cleanPhone.length >= 5) {
+                  return { name: name, number: cleanPhone };
+                }
+              }
+            }
+            const firstHospitalName = data.elements[0].tags.name || "Local Hospital";
+            return { name: firstHospitalName, number: getDefaultEmergencyNumber(location) };
+          }
+        }
+      } catch (e) {
+        console.warn("Overpass lookup failed:", e);
+      }
+    }
+    
+    return getHospitalEmergencyNumberStatic(location);
+  }
+  
+  async function updateCachedHospital() {
+    const loc = appState.user ? appState.user.location : '';
+    const resolved = await resolveNearestHospital(loc);
+    if (resolved) {
+      appState.nearestHospital = resolved;
+      console.log("Cached nearest hospital updated:", appState.nearestHospital);
+    }
   }
 
   // --- GLOBAL EMERGENCY SOS ---
   
   emergencyTrigger.addEventListener('click', () => {
-    const hospital = getHospitalEmergencyNumber(appState.user ? appState.user.location : '');
+    const hospital = appState.nearestHospital || { name: 'Emergency Services', number: '112' };
     const sosChoice = confirm(`EMERGENCY ALERT TRIGGERED\n\nWould you like to initiate a telephone call to your nearest hospital (${hospital.name}: ${hospital.number})?`);
     if (sosChoice) {
       window.location.href = `tel:${hospital.number}`;

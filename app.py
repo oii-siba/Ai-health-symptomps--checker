@@ -1383,14 +1383,24 @@ def view_prescription(report_id):
 def print_prescription(report_id):
     return render_prescription_page(report_id, print_mode=True)
 
+def get_default_emergency_number(location):
+    if not location:
+        return "112"
+    loc = str(location).lower().strip()
+    if "us" in loc or "usa" in loc or "york" in loc or "francisco" in loc or "california" in loc:
+        return "911"
+    if "uk" in loc or "london" in loc or "united kingdom" in loc:
+        return "999"
+    return "112"
+
 def get_hospital_emergency_number(location):
     if not location:
-        return "Nearest Hospital", "8207004928"
+        return "Emergency Services", "112"
     loc = str(location).lower().strip()
     if "san francisco" in loc:
         return "San Francisco General Hospital", "6282068000"
     elif "kolkata" in loc:
-        return "Kolkata Medical College & Hospital", "8207004928"
+        return "Kolkata Medical College & Hospital", "03322123789"
     elif "new york" in loc:
         return "New York-Presbyterian Hospital", "2127465454"
     elif "london" in loc:
@@ -1403,7 +1413,8 @@ def get_hospital_emergency_number(location):
         return "Manipal Hospital Bengaluru", "08025024444"
     elif "chennai" in loc:
         return "Apollo Hospital Chennai", "04428290200"
-    return "Nearest Hospital Emergency Services", "8207004928"
+    return "Emergency Services", get_default_emergency_number(location)
+
 
 def render_prescription_page(report_id, print_mode=False):
     conn = get_db()
