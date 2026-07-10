@@ -634,6 +634,7 @@ const startApp = () => {
 
   // Track current avatar URL separately (reading .src from DOM gives absolute URL with origin prepended)
   let currentAvatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256';
+  let prescriptionBlobUrl = null;
 
   // Body Region Popup Elements
   const regionPopup = document.getElementById('body-region-popup');
@@ -1211,6 +1212,21 @@ const startApp = () => {
     if (hologramWeight) hologramWeight.textContent = appState.user.weight ? `${appState.user.weight} kg` : '--';
     if (hologramAllergies) hologramAllergies.textContent = appState.user.allergies || 'None';
     if (hologramHistory) hologramHistory.textContent = appState.user.medicalHistory || 'None';
+
+    // Set map search query dynamically
+    if (bookAppointmentBtn) {
+      const userLocation = appState.user.location;
+      if (userLocation && userLocation.trim() !== '') {
+        bookAppointmentBtn.href = `https://www.google.com/maps/search/?api=1&query=hospitals+near+${encodeURIComponent(userLocation.trim())}`;
+      } else {
+        bookAppointmentBtn.href = 'https://www.google.com/maps/search/?api=1&query=hospitals+near+me';
+      }
+    }
+
+    // Set prescription download link if report exists
+    if (downloadPrescriptionBtn && appState.lastGeneratedReport) {
+      downloadPrescriptionBtn.href = generatePrescriptionBlobUrl(appState.lastGeneratedReport);
+    }
   }
 
   // Settings Modal Controls
@@ -2181,6 +2197,11 @@ const startApp = () => {
     homeCareActionsList.innerHTML = primaryMatch.selfCare.map(action => `
       <li>${action}</li>
     `).join('');
+
+    // Update prescription download link
+    if (downloadPrescriptionBtn) {
+      downloadPrescriptionBtn.href = generatePrescriptionBlobUrl(report);
+    }
   }
 
   // Start new diagnosis button
@@ -2277,37 +2298,28 @@ const startApp = () => {
     renderHistoryTab();
   });
 
-  if (downloadPrescriptionBtn) {
-    downloadPrescriptionBtn.addEventListener('click', async () => {
-      if (!appState.lastGeneratedReport) return;
-      const report = appState.lastGeneratedReport;
-      const user   = appState.user || {};
+  function generatePrescriptionBlobUrl(report) {
+    if (!report) return '#';
+    const user   = appState.user || {};
+    const patientName   = user.name   || 'Patient';
+    const patientAge    = user.age    ? user.age + ' Years' : '--';
+    const patientGender = user.gender || '--';
+    const patientId     = 'AIH-' + (report.id ? String(report.id).slice(0,4).toUpperCase() : '0000');
+    const dateStr       = new Date(report.timestamp || Date.now()).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    const symptoms      = report.symptoms || [];
+    const matches       = report.matches  || [];
+    const topMatch      = matches[0] || null;
+    const condDesc      = topMatch ? topMatch.condition.description : 'General health assessment based on reported symptoms.';
+    const selfCare      = topMatch ? (topMatch.condition.selfCare || []) : ['Rest adequately.','Stay hydrated.','Monitor symptoms.'];
+    const medAdvice     = [condDesc,'Monitor symptoms closely each day.','Ensure proper rest and ventilation.','If no improvement in 3 days, see a physician.'];
+    const lifestyleTips = ['Eat healthy and balanced diet.','Light exercise or yoga daily.','Meditation for stress relief.','Maintain good hygiene.','Stay positive and active.'];
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=AI_Health_Report_' + report.id;
 
-      // Silent background save
-      if (currentUser && db) {
-        setDoc(doc(db, "users", currentUser.uid, "history", report.id), report).catch(()=>{});
-      }
-      fetch('/api/history', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) }).catch(()=>{});
+    const mkLi = arr => arr.map(x=>'<li>'+x+'</li>').join('');
+    const condHTML = matches.slice(0,3).map((m,i)=>`<div class="ci"><div class="cl"><div class="cn">0${i+1}</div><div class="cm">${m.condition.name}</div></div><div class="cr"><div class="clb">Confidence</div><div class="cv">${m.percentage}%</div></div></div>`).join('');
+    const symHTML  = symptoms.map(s=>`<div class="si"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f5132" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${s}</span></div>`).join('');
 
-      const patientName   = user.name   || 'Patient';
-      const patientAge    = user.age    ? user.age + ' Years' : '--';
-      const patientGender = user.gender || '--';
-      const patientId     = 'AIH-' + (report.id ? String(report.id).slice(0,4).toUpperCase() : '0000');
-      const dateStr       = new Date(report.timestamp || Date.now()).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
-      const symptoms      = report.symptoms || [];
-      const matches       = report.matches  || [];
-      const topMatch      = matches[0] || null;
-      const condDesc      = topMatch ? topMatch.condition.description : 'General health assessment based on reported symptoms.';
-      const selfCare      = topMatch ? (topMatch.condition.selfCare || []) : ['Rest adequately.','Stay hydrated.','Monitor symptoms.'];
-      const medAdvice     = [condDesc,'Monitor symptoms closely each day.','Ensure proper rest and ventilation.','If no improvement in 3 days, see a physician.'];
-      const lifestyleTips = ['Eat healthy and balanced diet.','Light exercise or yoga daily.','Meditation for stress relief.','Maintain good hygiene.','Stay positive and active.'];
-      const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=AI_Health_Report_' + report.id;
-
-      const mkLi = arr => arr.map(x=>'<li>'+x+'</li>').join('');
-      const condHTML = matches.slice(0,3).map((m,i)=>`<div class="ci"><div class="cl"><div class="cn">0${i+1}</div><div class="cm">${m.condition.name}</div></div><div class="cr"><div class="clb">Confidence</div><div class="cv">${m.percentage}%</div></div></div>`).join('');
-      const symHTML  = symptoms.map(s=>`<div class="si"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f5132" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>${s}</span></div>`).join('');
-
-      const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Prescription - ${patientName}</title>
+    const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Prescription - ${patientName}</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2353,13 +2365,13 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 .at{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
 .al{list-style:none}
 .al li{font-size:11px;line-height:1.5;margin-bottom:6px;padding-left:10px;position:relative}
-.al li::before{content:"â€¢";position:absolute;left:0;color:#64748b}
+.al li::before{content:"•";position:absolute;left:0;color:#64748b}
 .ft{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:16px;border-top:2px solid #e2e8f0;padding-top:16px;align-items:start}
 .wt{font-size:11px;font-weight:700;color:#b91c1c;text-transform:uppercase;display:flex;align-items:center;gap:5px;margin-bottom:8px}
 .wt svg{width:13px;height:13px;stroke:#b91c1c;flex-shrink:0}
 .wl{list-style:none}
 .wl li{font-size:11px;color:#475569;margin-bottom:4px;padding-left:9px;position:relative}
-.wl li::before{content:"â€¢";color:#b91c1c;position:absolute;left:0}
+.wl li::before{content:"•";color:#b91c1c;position:absolute;left:0}
 .sos{background:#b91c1c;color:#fff;border-radius:30px;padding:5px 12px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;width:fit-content;margin-top:8px;text-decoration:none}
 .ftl{font-size:11px;font-weight:700;text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .ftl svg{stroke:#0f5132;width:13px;height:13px;flex-shrink:0}
@@ -2398,15 +2410,15 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 <div class="adv">
   <div class="ac b"><div class="ah"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span class="at">Medical Advice</span></div><ul class="al">${mkLi(medAdvice)}</ul></div>
   <div class="ac g"><div class="ah"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="at">Recommended Care</span></div><ul class="al">${mkLi(selfCare)}</ul></div>
-  <div class="ac y"><div class="ah"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="at">Lifestyle Tips</span></div><ul class="al">${mkLi(lifestyleTips)}</ul></div>
+  <div class="ac y"><div class="ah"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="at">Lifestyle Tips</span></div><ul class="al">${lifestyleTips.map(x=>'<li>'+x+'</li>').join('')}</ul></div>
 </div>
 <div class="ft">
   <div><div class="wt"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Warning Signs</div>
-  <ul class="wl"><li>High fever (Above 102Â°F)</li><li>Difficulty in breathing</li><li>Chest pain or pressure</li><li>Severe headache or confusion</li><li>Persistent vomiting</li></ul>
+  <ul class="wl"><li>High fever (Above 102°F)</li><li>Difficulty in breathing</li><li>Chest pain or pressure</li><li>Severe headache or confusion</li><li>Persistent vomiting</li></ul>
   <a href="tel:8207004928" class="sos"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>EMERGENCY: 8207004928</a></div>
-  <div><div class="ftl"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Follow Up</div>
-  <div class="fb">If symptoms do not improve within <strong>3â€“4 days</strong>, or worsen, please consult a medical doctor.</div>
-  <div class="cb"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>AI Health Team</div></div>
+  <div><div class="ftl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Follow Up</div>
+  <div class="fb">If symptoms do not improve within <strong>3–4 days</strong>, or worsen, please consult a medical doctor.</div>
+  <div class="cb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>AI Health Team</div></div>
   <div class="sb"><div class="st">Scan For More Info</div><div class="qr"><img src="${qrUrl}" alt="QR"/></div></div>
 </div>
 </div>
@@ -2415,11 +2427,31 @@ body{font-family:'Outfit',sans-serif;background:#f1f5f9;padding:28px 18px;displa
 <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),600));</script>
 </body></html>`;
 
-      const blob = new Blob([html], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
+    if (prescriptionBlobUrl) {
+      URL.revokeObjectURL(prescriptionBlobUrl);
+    }
+    const blob = new Blob([html], { type: 'text/html' });
+    prescriptionBlobUrl = URL.createObjectURL(blob);
+    return prescriptionBlobUrl;
+  }
+
+  if (downloadPrescriptionBtn) {
+    downloadPrescriptionBtn.addEventListener('click', (e) => {
+      if (!appState.lastGeneratedReport) {
+        e.preventDefault();
+        return;
+      }
+      const report = appState.lastGeneratedReport;
+
+      // Silent background save
+      if (currentUser && db) {
+        setDoc(doc(db, "users", currentUser.uid, "history", report.id), report).catch(()=>{});
+      }
+      fetch('/api/history', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(report) }).catch(()=>{});
     });
   }
+
+
 
   function renderHistoryTab() {
     if (appState.savedDiagnostics.length === 0) {
