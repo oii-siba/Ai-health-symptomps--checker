@@ -1481,15 +1481,7 @@ const startApp = () => {
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const tabId = item.getAttribute('data-tab');
-      if (tabId === 'checker') {
-        if (history.state && history.state.appState) {
-          history.back();
-        } else {
-          switchTab(tabId);
-        }
-      } else {
-        switchTab(tabId);
-      }
+      switchTab(tabId);
     });
   });
 
